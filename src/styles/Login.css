@@ -1,0 +1,135 @@
+/* Container */
+.Login {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  background-color: #ffffff;
+  overflow: hidden;
+}
+
+/* LEFT SIDE (Background Image) */
+.Login-background-container {
+  position: relative;
+  width: 50%;
+  height: 100%;
+  background-size: cover; /* removed url() — handled by inline style in JSX */
+  background-position: center;
+}
+
+.Login-background-content {
+  position: absolute;
+  width: 70%;
+  top: 70%;
+  left: 80%;
+  transform: translate(-50%, -60%);
+}
+
+.Login-background-content img {
+  width: auto;
+  height: 100%;
+}
+
+/* RIGHT SIDE (Login Form) */
+.Login-form {
+  width: 50%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 80px 60px 40px 60px;
+  margin-left: auto;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.Login-form h1 {
+  color: #0063a5;
+  font-family: Poppins;
+  font-size: 40px;
+  font-weight: 600;
+  margin-top: 240px;
+  margin-left: 60px;
+  align-self: flex-start;
+}
+
+.Login-form h2 {
+  color: #222222;
+  font-family: Poppins;
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: -0.8px;
+  margin-left: 200px;
+  margin-bottom: 100px;
+  align-self: flex-start;
+}
+
+/* Form */
+.Login-form form {
+  width: 70%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-top: 30px;
+  margin-left: 40px;
+}
+
+.Login-button {
+  width: 700px;
+  height: 65px;
+  background-color: #0063a5;
+  color: #ffffff;
+  font-size: 20px;
+  font-family: "Poppins", sans-serif;
+  border: 1px solid #0063a5;
+  border-radius: 8px;
+  padding: 10px 20px;
+  margin-bottom: 30px;
+  margin-left: 60px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.Login-button:hover {
+  background-color: #ffffff;
+  color: #0063a5;
+  cursor: pointer;
+}
+
+/* Footer */
+.Login-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  padding-top: 30px;
+  border-top: 2px solid #f0f0f0;
+}
+
+.For-inquiries {
+  color: #7C747C;
+  font-family: Poppins;
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+  letter-spacing: -0.6px;
+}
+
+.For-inquiries p {
+  margin: 0;
+}
+
+.Published-date {
+  color: #222222;
+  font-family: Poppins;
+  font-size: 12px;
+  font-weight: 400;
+  margin: 0;
+}
+
+.Published-date p {
+  margin-bottom: 0px;
+}
