@@ -1,0 +1,23 @@
+.Admin-dashboard {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: auto;
+}
+
+.Main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 90px 30px 30px 30px;
+    background-color: #FFFFFF;
+    overflow-y: auto;
+}
+
+.Main-content h1 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+    margin: 20px 0;
+}

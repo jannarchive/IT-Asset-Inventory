@@ -1,0 +1,155 @@
+.Header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    padding: 15px 20px;
+    background-color: #B7B2B2;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-sizing: border-box;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.Header .LinkedBPO-logo {
+    max-width: 100px;
+    height: auto;
+    object-fit: contain;
+}
+
+.Navigation-bar {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    position: relative;
+    background-color: transparent;
+    padding: 0;
+    margin: 0;
+}
+
+.Account-icon {
+    color: #F9FAFB;
+    cursor: pointer;
+    transition: transform 0.2s ease, color 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    min-height: 32px;
+    background-color: transparent;
+}
+
+.Account-icon:hover {
+    transform: scale(1.1);
+    color: #39393d;
+}
+
+.Navigation-bar p {
+    color: #222222;
+    font-size: 18px;
+    font-weight: 500;
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+}
+
+.Dropdown-tooltip {
+    position: absolute;
+    top: 65px;
+    right: 0;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.15);
+    padding: 20px;
+    width: 280px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 1001;
+    animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.Dropdown-arrow {
+    position: absolute;
+    top: -8px;
+    right: 20px;
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 10px solid #fff;
+    z-index: 1;
+}
+
+.Dropdown-content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.User-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 5px;
+    display: block;
+}
+
+.Dropdown-email {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2F3B8D;
+    text-align: center;
+    margin: 0;
+}
+
+.Dropdown-user-status {
+    font-size: 14px;
+    font-weight: 500;
+    color: #666;
+    margin: 0;
+}
+
+.Logout-button {
+    color: #E74C3C;
+    cursor: pointer;
+
+    /* Bigger icon */
+    font-size: 32px !important;
+
+    /* Bigger clickable area */
+    width: 70px;
+    height: 70px;
+
+    /* Center icon inside */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-top: 10px;
+    border-radius: 10px;
+    
+    transition: all 0.2s ease;
+}
+
+.Logout-button:hover {
+    color: #C0392B;
+    background-color: #FFE5E3;
+    transform: scale(1.20);
+}

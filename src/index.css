@@ -4,8 +4,15 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  width: 100vw;
-  height: 100vh;
-  background-color:#F9FAFB;
+}
 
+html, body {
+  width: 100%;
+  height: 100%;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  background-color: #F9FAFB;
 }

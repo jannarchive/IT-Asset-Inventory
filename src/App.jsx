@@ -3,6 +3,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "./App.css";
 
 import Login from "./pages/Login";
+import AdminDashboard from "./pages/AdminDashboard";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -12,6 +13,11 @@ function App() {
     {
       path: "/",
       element: <Login setIsLoggedIn={setIsLoggedIn} />,
+      errorElement: <NotFound />,
+    },
+    {
+      path: "/admin-dashboard",
+      element: <AdminDashboard />,
       errorElement: <NotFound />,
     },
   ]);
