@@ -1,10 +1,13 @@
+/* ================================
+   LOGIN PAGE — RESPONSIVE FLEXBOX
+   ================================ */
+
 /* Container */
 .Login {
-  margin: 0;
-  padding: 0;
-  display: flex;
   width: 100%;
   height: 100vh;
+  display: flex;
+  flex-direction: row;
   background-color: #ffffff;
   overflow: hidden;
 }
@@ -12,84 +15,82 @@
 /* LEFT SIDE (Background Image) */
 .Login-background-container {
   position: relative;
-  width: 50%;
+  flex: 1 1 50%;
   height: 100%;
-  background-size: cover; /* removed url() — handled by inline style in JSX */
+  background-size: cover;
   background-position: center;
-}
-
-.Login-background-content {
-  position: absolute;
-  width: 70%;
-  top: 70%;
-  left: 80%;
-  transform: translate(-50%, -60%);
-}
-
-.Login-background-content img {
-  width: auto;
-  height: 100%;
 }
 
 /* RIGHT SIDE (Login Form) */
 .Login-form {
-  width: 50%;
-  height: 100vh;
+  flex: 1 1 50%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 80px 60px 40px 60px;
-  margin-left: auto;
-  overflow: hidden;
+  padding: 48px 56px 32px 56px;
   box-sizing: border-box;
+  overflow: hidden;
+}
+
+.Login-form form{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 70%; /* Adjust the width as needed */
+    margin-top: 30px;
 }
 
 .Login-form h1 {
   color: #0063a5;
-  font-family: Poppins;
-  font-size: 40px;
+  font-family: Poppins, sans-serif;
+  font-size: clamp(22px, 2.5vw, 35px);
   font-weight: 600;
-  margin-top: 240px;
-  margin-left: 60px;
+  margin: 190px 0 8px 4px; /* top right bottom left */
   align-self: flex-start;
+  line-height: 1.2;
 }
 
 .Login-form h2 {
   color: #222222;
-  font-family: Poppins;
-  font-size: 16px;
+  font-family: Poppins, sans-serif;
+  font-size: clamp(12px, 1vw, 15px);
   font-weight: 400;
-  letter-spacing: -0.8px;
-  margin-left: 200px;
-  margin-bottom: 100px;
+  letter-spacing: -0.5px;
+  margin: 0 0 40px 135px;
   align-self: flex-start;
+  line-height: 1.4;
 }
 
 /* Form */
 .Login-form form {
-  width: 70%;
+  width: 100%;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  margin-top: 30px;
-  margin-left: 40px;
+  align-items: stretch;
+  justify-content: center;
+  margin-top: 0;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .Login-button {
-  width: 700px;
-  height: 65px;
+  width: 100%;
+  max-width: 520px;
+  height: clamp(46px, 4.5vw, 60px);
   background-color: #0063a5;
   color: #ffffff;
-  font-size: 20px;
+  font-size: clamp(15px, 1.3vw, 18px);
   font-family: "Poppins", sans-serif;
   border: 1px solid #0063a5;
   border-radius: 8px;
-  padding: 10px 20px;
-  margin-bottom: 30px;
-  margin-left: 60px;
-  cursor: pointer;
+  padding: 0 20px;
+  margin: 75px 0 8px 60px;
   transition: all 0.3s ease;
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .Login-button:hover {
@@ -104,18 +105,21 @@
   flex-direction: column;
   align-items: flex-start;
   width: 100%;
-  padding-top: 30px;
+  padding-top: 16px;
   border-top: 2px solid #f0f0f0;
+  margin: 120px 0 0 0;
+  flex-shrink: 0;
 }
 
 .For-inquiries {
-  color: #7C747C;
-  font-family: Poppins;
-  font-size: 15px;
+  color: #7c747c;
+  font-family: Poppins, sans-serif;
+  font-size: clamp(11px, 0.85vw, 14px);
   font-style: normal;
   font-weight: 400;
-  line-height: normal;
-  letter-spacing: -0.6px;
+  line-height: 1.4;
+  letter-spacing: -0.4px;
+  margin: 0 0 8px 120px;
 }
 
 .For-inquiries p {
@@ -124,12 +128,187 @@
 
 .Published-date {
   color: #222222;
-  font-family: Poppins;
-  font-size: 12px;
+  font-family: Poppins, sans-serif;
+  font-size: clamp(10px, 0.75vw, 12px);
   font-weight: 400;
-  margin: 0;
+  margin: 0 0 3000px 270px;
 }
 
 .Published-date p {
-  margin-bottom: 0px;
+  margin: 0;
+}
+
+/* ================================
+   RESPONSIVE BREAKPOINTS
+   ================================ */
+
+/* Large tablet / small desktop */
+@media (max-width: 1280px) {
+  .Login-form h1 {
+    margin: 130px 0 8px 4px;
+  }
+
+  .Login-form h2 {
+    margin: 0 0 30px 90px;
+  }
+
+  .Login-button {
+    margin: 50px 0 8px 40px;
+  }
+
+  .Login-footer {
+    margin: 80px 0 0 0;
+  }
+
+  .For-inquiries {
+    margin: 0 0 8px 80px;
+  }
+
+  .Published-date {
+    margin: 0 0 3000px 180px;
+  }
+}
+
+/* Tablet (portrait & landscape) */
+@media (max-width: 1024px) {
+  .Login {
+    flex-direction: row;
+  }
+
+  .Login-background-container {
+    flex: 1 1 40%;
+  }
+
+  .Login-form {
+    flex: 1 1 60%;
+    padding: 40px 36px 28px 36px;
+  }
+
+  .Login-form h1 {
+    margin: 80px 0 8px 4px;
+  }
+
+  .Login-form h2 {
+    margin: 0 0 24px 60px;
+  }
+
+  .Login-button {
+    max-width: 100%;
+    margin: 32px 0 8px 24px;
+  }
+
+  .Login-footer {
+    margin: 48px 0 0 0;
+  }
+
+  .For-inquiries {
+    margin: 0 0 8px 48px;
+  }
+
+  .Published-date {
+    margin: 0 0 3000px 110px;
+  }
+}
+
+/* Mobile landscape / small tablet */
+@media (max-width: 768px) {
+  .Login {
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .Login-background-container {
+    flex: 0 0 30vh;
+    width: 100%;
+    min-height: unset;
+  }
+
+  .Login-form {
+    flex: 1 1 70vh;
+    width: 100%;
+    padding: 24px 24px 20px 24px;
+    justify-content: space-between;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  .Login-form h1 {
+    font-size: clamp(20px, 5vw, 28px);
+    margin: 16px 0 8px 60px;
+  }
+
+  .Login-form h2 {
+    font-size: clamp(11px, 2.5vw, 14px);
+    margin: 0 0 12px 140px;
+  }
+
+  .Login-form form {
+    flex: 1 1 auto;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .Login-button {
+    width: 100%;
+    max-width: 100%;
+    height: clamp(44px, 7vw, 54px);
+    margin: 80px 0 60px 0;;
+  }
+
+  .Login-footer {
+    margin: 80px 0 0 0;
+    padding-top: 12px;
+  }
+
+  .For-inquiries {
+    margin: 0 0 8px 140px;
+  }
+
+  .Published-date {
+    margin: 0 0 3000px 280px;
+  }
+}
+
+/* Mobile portrait */
+@media (max-width: 480px) {
+  .Login-background-container {
+    flex: 0 0 25vh;
+  }
+
+  .Login-form {
+    flex: 1 1 75vh;
+    padding: 20px 18px 16px 18px;
+  }
+
+  .Login-form h1 {
+    font-size: clamp(18px, 6vw, 24px);
+    margin: 12px 0 4px 0;
+  }
+
+  .Login-form h2 {
+    font-size: 12px;
+    margin: 0 0 8px 0;
+  }
+
+  .Login-button {
+    height: 48px;
+    font-size: 15px;
+    margin: 0;
+  }
+
+  .Login-footer {
+    margin: 0;
+    padding-top: 10px;
+  }
+
+  .For-inquiries {
+    font-size: 11px;
+    margin: 0 0 4px 0;
+  }
+
+  .Published-date {
+    font-size: 10px;
+    margin: 0;
+  }
 }
