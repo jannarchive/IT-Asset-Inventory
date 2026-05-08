@@ -7,18 +7,18 @@ import AdminDashboard from "./pages/AdminDashboard";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const NotFound = () => <h1>404 - Not Found</h1>;
+  const notFound = () => <h1>404 - Not Found</h1>;
 
   const router = createBrowserRouter([
     {
       path: "/",
       element: <Login setIsLoggedIn={setIsLoggedIn} />,
-      errorElement: <NotFound />,
+      errorElement: <notFound />,
     },
     {
       path: "/admin-dashboard",
       element: <AdminDashboard />,
-      errorElement: <NotFound />,
+      errorElement: <notFound />,
     },
   ]);
 

@@ -1,0 +1,289 @@
+:root {
+  --color-primary: #0063a5;
+  --color-white: #F9FAFB;
+  --color-text-dark: #222222;
+  --color-text-gray: #767272;
+  --color-border: #BDBCBC;
+
+  --font-base: "Poppins", sans-serif;
+
+  /* Fluid spacing scale */
+  --space-xs: clamp(4px, 0.5vw, 8px);
+  --space-sm: clamp(8px, 1vw, 16px);
+  --space-md: clamp(16px, 2vw, 28px);
+  --space-lg: clamp(24px, 3vw, 48px);
+  --space-xl: clamp(40px, 6vw, 80px);
+
+  --header-offset: clamp(60px, 14vh, 190px);
+}
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.Login {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: row;
+  background-color: var(--color-white);
+  overflow: hidden;
+}
+
+/* Left Panel — Background Image */
+.Login-background-container {
+  position: relative;
+  flex: 1 1 50%;
+  min-height: 100vh;
+  background-size: cover;
+  background-position: center;
+}
+
+/* Right Panel — Login Form */
+.Login-form {
+  flex: 1 1 50%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;           
+  padding: var(--space-lg) clamp(24px, 5vw, 56px);
+  text-align: center;             
+}
+
+/* Form Header (h1 + h2) */
+.Login-form-header {
+  width: 100%;
+  padding-top: var(--header-offset);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.Login-form h1 {
+  color: var(--color-primary);
+  font-family: var(--font-base);
+  font-size: clamp(22px, 2.5vw, 35px);
+  font-weight: 600;
+  margin-top: clamp(50px, 20vh, 150px);
+  line-height: 1.2;
+  text-align: center;
+}
+
+.Login-form h2 {
+  color: var(--color-text-dark);
+  font-family: var(--font-base);
+  font-size: clamp(12px, 1vw, 15px);
+  font-weight: 400;
+  letter-spacing: -0.3px;
+  margin: 0;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* Login Button */
+.Login-button {
+  width: 100%;
+  max-width: 520px;
+  height: clamp(46px, 4.5vw, 60px);
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  font-size: clamp(15px, 1.3vw, 18px);
+  font-family: var(--font-base);
+  font-weight: 500;
+  border: 2px solid var(--color-primary);
+  border-radius: 8px;
+  padding: 0 20px;
+  cursor: pointer;
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
+  flex-shrink: 0;
+  align-self: center;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: clamp(20px, 10vh, 50px);
+  margin-bottom: clamp(100px, 80vh, 280px);
+}
+
+.Login-button:hover,
+.Login-button:focus-visible {
+  background-color: var(--color-white);
+  color: var(--color-primary);
+  outline: none;
+}
+
+/* Footer */
+.Login-footer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center; 
+  gap: var(--space-xs);
+  padding-top: var(--space-sm);
+  border-top: 2px solid #f0f0f0;
+  flex-shrink: 0;
+}
+
+.For-inquiries {
+  color: var(--color-text-gray);
+  font-family: var(--font-base);
+  font-size: clamp(11px, 0.85vw, 14px);
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: -0.3px;
+  margin: 0;
+  text-align: center;
+}
+
+.For-inquiries p {
+  margin: 0;
+  text-align: center;
+}
+
+.Published-date {
+  color: var(--color-text-dark);
+  font-family: var(--font-base);
+  font-size: clamp(10px, 0.75vw, 12px);
+  font-weight: 400;
+  margin: 0;
+  text-align: center;
+}
+
+.Published-date p {
+  margin: 0;
+  text-align: center;
+}
+
+/* === Mobile portrait — up to 480px === */
+@media (max-width: 480px) {
+  :root {
+    --header-offset: clamp(16px, 5vh, 32px);
+  }
+
+  .Login {
+    flex-direction: column;
+  }
+
+  .Login-background-container {
+    flex: 0 0 25vh;
+    min-height: unset;
+    width: 100%;
+  }
+
+  .Login-form {
+    flex: 1 1 auto;
+    min-height: 75vh;
+    padding: 20px 18px 16px;
+    align-items: center;
+  }
+
+  .Login-form h1 {
+    font-size: clamp(18px, 6vw, 22px);
+  }
+
+  .Login-form h2 {
+    font-size: clamp(11px, 3vw, 13px);
+  }
+
+  .Login-button {
+    height: 48px;
+    font-size: 15px;
+    max-width: 100%;
+    align-self: center;
+  }
+}
+
+/* === Mobile landscape / small tablet — 481–768px === */
+@media (min-width: 481px) and (max-width: 768px) {
+  :root {
+    --header-offset: clamp(20px, 4vh, 40px);
+  }
+
+  .Login {
+    flex-direction: column;
+  }
+
+  .Login-background-container {
+    flex: 0 0 30vh;
+    min-height: unset;
+    width: 100%;
+  }
+
+  .Login-form {
+    flex: 1 1 auto;
+    min-height: 70vh;
+    width: 100%;
+    padding: 24px;
+    align-items: center;
+  }
+
+  .Login-form h1 {
+    font-size: clamp(20px, 5vw, 26px);
+  }
+
+  .Login-form h2 {
+    font-size: clamp(12px, 2.5vw, 14px);
+  }
+
+  .Login-button {
+    max-width: 100%;
+    height: clamp(44px, 7vw, 54px);
+    align-self: center;
+  }
+}
+
+/* === Tablet — 769–1024px === */
+@media (min-width: 769px) and (max-width: 1024px) {
+  :root {
+    --header-offset: clamp(50px, 9vh, 90px);
+  }
+
+  .Login-background-container {
+    flex: 1 1 40%;
+  }
+
+  .Login-form {
+    flex: 1 1 60%;
+    padding: 40px 36px 28px;
+    align-items: center;
+  }
+
+  .Login-button {
+    max-width: 100%;
+    align-self: center;
+  }
+}
+
+/* === Small desktop — 1025–1280px === */
+@media (min-width: 1025px) and (max-width: 1280px) {
+  :root {
+    --header-offset: clamp(80px, 11vh, 140px);
+  }
+
+  .Login-form {
+    padding: 44px 48px 32px;
+    align-items: center;
+  }
+}
+
+/* === Large desktop — 1281px+ === */
+@media (min-width: 1281px) {
+  :root {
+    --header-offset: clamp(120px, 14vh, 190px);
+  }
+}
+
+/* === Extra-large / wide screens — 1600px+ === */
+@media (min-width: 1600px) {
+  .Login-form {
+    flex: 0 0 45%;
+    padding: 56px 72px 40px;
+    align-items: center;
+  }
+
+  .Login-background-container {
+    flex: 1 1 55%;
+  }
+}

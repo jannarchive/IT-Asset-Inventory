@@ -43,7 +43,10 @@ function NavigationBar() {
                         <AccountCircleIcon className="User-icon" style={{ fontSize: 80 }} />
                         <p className="Dropdown-email">useradmin@example.com</p>
                         <p className="Dropdown-user-status">Active</p>
-                        <Logout className="Logout-button" onClick={handleLogout} style={{ fontSize: 100 }} />
+                        <button className="Logout-button" onClick={handleLogout}>
+                            <Logout />
+                            <p>Logout</p>
+                        </button>
                     </div>
                 </div>
             )}
