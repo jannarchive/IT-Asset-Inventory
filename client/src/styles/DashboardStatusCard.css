@@ -1,0 +1,84 @@
+.Status-card-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    flex-grow: 1;  /* Allow status cards to take up available space */
+    max-width: calc(100% - 320px); /* Leaves space for the right panel */
+  }
+  
+  
+  /* Each card */
+  .Status-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 275px;
+    max-width: 300px;  
+    padding: 10px;
+    border: 1px solid #D9D9D9;
+    border-radius: 8px;
+    background-color: #FFFFFF;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    border-bottom: 7px solid #000000; /* Default color, will be overridden */
+  }
+  
+  /* Make cards responsive on smaller screens */
+  @media (max-width: 900px) {
+    .Status-card {
+      width: 100%; /* Allow full width for small screens */
+    }
+  }
+  
+  .Status-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 70px;  /* Set icon size here */
+  }
+  
+  .Status-card-details {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+  
+  .Status-card-count {
+    font-size: 26px;
+    font-weight: normal;
+    margin: 0;
+    color: #4A4A4A;
+  }
+  
+  .Status-card-status {
+    font-size: 16px;
+    color: #6B6B6B;
+    margin: 0;
+  }
+  
+  .Status-card-divider {
+    position: absolute;
+    bottom: 0;
+    left: 10px;
+    right: 10px;
+    height: 4px;
+    background-color: #6B6B6B; /* Matches the pencil icon color */
+    border-radius: 2px;
+  }
+  
+  /* Custom classes for different bottom-border colors */
+  .Status-card-total-assets {
+    border-bottom: 7px solid #767272;
+  }
+  
+  .Status-card-active-assets {
+    border-bottom: 7px solid #44D852;
+  }
+  
+  .Status-card-defective-assets {
+    border-bottom: 7px solid #B71919;
+  }
+  
+  .Status-card-incomplete-workstation {
+    border-bottom: 7px solid #FF6A00;
+  }

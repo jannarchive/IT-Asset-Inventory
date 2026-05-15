@@ -1,0 +1,240 @@
+:root {
+  --color-primary: #0063a5;
+  --color-secondary: #daeafe;
+  --color-white: #f9fafb;
+  --color-red: #e52424;
+  --color-text-dark: #222222;
+  --color-text-gray: #767272;
+  --color-border: #aeacac;
+
+  --font-base: "Poppins", sans-serif;
+
+  /* Fluid spacing scale */
+  --space-xs: clamp(4px, 0.5vw, 8px);
+  --space-sm: clamp(8px, 1vw, 16px);
+  --space-md: clamp(16px, 2vw, 28px);
+  --space-lg: clamp(24px, 3vw, 48px);
+  --space-xl: clamp(40px, 6vw, 80px);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Sidebar Container */
+
+.Sidebar {
+  width: clamp(220px, 15vw, 280px);
+  min-height: 100vh;
+
+  position: fixed;
+  top: 0;
+  left: 0;
+
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+
+  background-color: #fffffc;
+  border-right: 1px solid var(--color-border);
+
+  padding-top: clamp(70px, 8vh, 90px);
+  padding-bottom: var(--space-md);
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  transition: all 0.3s ease;
+  z-index: 100;
+}
+
+/* Sidebar Header */
+
+.Sidebar h2 {
+  color: var(--color-text-gray);
+  font-family: var(--font-base);
+  font-size: clamp(15px, 2.5vw, 20px);
+  font-weight: 500;
+
+  margin: 0 20px var(--space-sm);
+}
+
+/* Sidebar List */
+
+.SidebarList {
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  list-style: none;
+
+  padding: 0;
+  margin: 0;
+}
+
+/* Sidebar Rows */
+
+.SidebarList .row {
+  width: calc(100% - 20px);
+  min-height: 52px;
+
+  margin: 0 auto;
+  padding: 0 12px;
+
+  display: flex;
+  align-items: center;
+
+  border-radius: 10px;
+
+  color: var(--color-text-gray);
+  font-family: var(--font-base);
+  font-size: clamp(15px, 2.5vw, 20px);
+  font-weight: 600;
+
+  transition: all 0.2s ease;
+}
+
+.SidebarList .row:hover {
+  background-color: var(--color-secondary);
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.SidebarList .row.active {
+  background-color: var(--color-secondary);
+  color: var(--color-primary);
+}
+
+/* Sidebar Icons and Titles */
+
+.row #icon {
+  width: 50px;
+  min-width: 50px;
+
+  display: grid;
+  place-items: center;
+
+  font-size: clamp(18px, 1.4vw, 24px);
+}
+
+.row #title {
+  flex: 1;
+  font-size: inherit;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* === Mobile portrait — up to 480px === */
+
+@media (max-width: 480px) {
+  .Sidebar {
+    width: 65px;
+    align-items: center;
+
+    padding-top: 70px;
+  }
+
+  .Sidebar h2 {
+    display: none;
+  }
+
+  .SidebarList {
+    align-items: center;
+    gap: 10px;
+  }
+
+  .SidebarList .row {
+    width: 50px;
+    min-height: 50px;
+
+    justify-content: center;
+    padding: 0;
+  }
+
+  .row #icon {
+    width: 100%;
+    min-width: unset;
+    font-size: 20px;
+  }
+
+  .row #title {
+    display: none;
+  }
+}
+
+/* === Mobile landscape / small tablet — 481–768px === */
+
+@media (min-width: 481px) and (max-width: 768px) {
+  .Sidebar {
+    width: 75px;
+    align-items: center;
+
+    padding-top: 75px;
+  }
+
+  .Sidebar h2 {
+    display: none;
+  }
+
+  .SidebarList {
+    align-items: center;
+  }
+
+  .SidebarList .row {
+    width: 58px;
+
+    justify-content: center;
+    padding: 0;
+  }
+
+  .row #icon {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .row #title {
+    display: none;
+  }
+}
+
+/* === Tablet — 769–1024px === */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .Sidebar {
+    width: 220px;
+  }
+
+  .Sidebar h2 {
+    font-size: 18px;
+  }
+
+  .SidebarList .row {
+    font-size: 15px;
+  }
+}
+
+/* === Small desktop — 1025–1280px === */
+
+@media (min-width: 1025px) and (max-width: 1280px) {
+  .Sidebar {
+    width: 240px;
+  }
+}
+
+/* === Extra-large / wide screens — 1600px+ === */
+
+@media (min-width: 1600px) {
+  .Sidebar {
+    width: 300px;
+  }
+
+  .SidebarList .row {
+    min-height: 58px;
+  }
+}
