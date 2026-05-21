@@ -101,14 +101,28 @@ function Login() {
               return;
             }
 
-            const { data: sessionData } = await supabase.auth.getSession();
-            if (sessionData.session?.access_token) {
-              localStorage.setItem(
-                "authToken",
-                sessionData.session.access_token,
+            // Call backend to issue a JWT token for API access
+            // The backend will verify the user is active and return a signed JWT
+            const backendResponse = await fetch(
+              `${import.meta.env.VITE_SERVER_URL || "http://localhost:3000"}/api/auth/oauth-login`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: systemUser.email }),
+              },
+            );
+
+            const backendData = await backendResponse.json();
+
+            if (!backendResponse.ok) {
+              throw new Error(
+                backendData.error ||
+                  "Failed to complete OAuth login. Please try again.",
               );
             }
 
+            // Store the backend JWT token for API access
+            localStorage.setItem("authToken", backendData.token);
             localStorage.setItem(
               "system_user",
               JSON.stringify({
@@ -157,6 +171,8 @@ function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
                 disabled={loading}
+                autoComplete="email"
+                required
               />
             </div>
 
@@ -169,6 +185,8 @@ function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 disabled={loading}
+                autoComplete="current-password"
+                required
               />
             </div>
 

@@ -1,4 +1,5 @@
-import * as Asset from '../models/Asset.js';
+import * as Asset from "../models/Asset.js";
+import ActivityLogs from "../models/ActivityLogs.js";
 
 // Validates that a route param is a positive integer
 const parseId = (value) => {
@@ -48,7 +49,22 @@ export const createAsset = async (req, res) => {
       });
     }
 
-    const newAsset = await Asset.createAsset({ assetName, assetTypeId, statusId, deviceId });
+    const newAsset = await Asset.createAsset({
+      assetName,
+      assetTypeId,
+      statusId,
+      deviceId,
+    });
+
+    // 🔹 LOG ACTIVITY - Asset created
+    if (req.userId) {
+      await ActivityLogs.logAssetCreated(
+        newAsset.assets_id,
+        assetName,
+        deviceId,
+        req.userId,
+      );
+    }
 
     res.status(201).json({
       message: "Asset created successfully",
@@ -80,7 +96,32 @@ export const updateAsset = async (req, res) => {
       return res.status(404).json({ error: "Asset not found" });
     }
 
+    // 🔹 LOG ACTIVITY - Capture old status before update
+    const oldStatus = existing.status;
+
     const updatedAsset = await Asset.updateAsset(id, { assetName, statusId });
+
+    // Log activity based on what changed
+    if (req.userId) {
+      if (oldStatus !== statusId) {
+        await ActivityLogs.logStatusChange(
+          id,
+          assetName,
+          oldStatus,
+          statusId,
+          existing.device_id,
+          req.userId,
+        );
+      } else {
+        await ActivityLogs.logAssetUpdated(
+          id,
+          assetName,
+          { name: assetName, statusId },
+          existing.device_id,
+          req.userId,
+        );
+      }
+    }
 
     res.status(200).json({
       message: "Asset updated successfully",
@@ -103,6 +144,16 @@ export const deleteAsset = async (req, res) => {
     const existing = await Asset.getAssetById(id);
     if (!existing) {
       return res.status(404).json({ error: "Asset not found" });
+    }
+
+    // 🔹 LOG ACTIVITY - Before deletion
+    if (req.userId) {
+      await ActivityLogs.logAssetDeleted(
+        id,
+        existing.asset_name,
+        existing.device_id,
+        req.userId,
+      );
     }
 
     await Asset.deleteAsset(id);

@@ -1,12 +1,12 @@
-import * as User from '../models/User.js';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import * as User from "../models/User.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
 if (!JWT_SECRET) {
   throw new Error(
-    "FATAL: JWT_SECRET environment variable is not set. Set it in your .env file."
+    "FATAL: JWT_SECRET environment variable is not set. Set it in your .env file.",
   );
 }
 
@@ -37,7 +37,9 @@ export const login = async (req, res) => {
     if (user.user_status !== "Active") {
       return res
         .status(403)
-        .json({ error: "Your account is inactive. Contact the system administrator." });
+        .json({
+          error: "Your account is inactive. Contact the system administrator.",
+        });
     }
 
     // Guard: bcrypt hashes are always exactly 60 characters.
@@ -46,7 +48,7 @@ export const login = async (req, res) => {
     if (!user.password.startsWith("$2") || user.password.length < 60) {
       console.error(
         `Corrupted password hash for user ${user.email} (length: ${user.password.length}). ` +
-        `Run the ALTER TABLE fix and reset the password manually.`
+          `Run the ALTER TABLE fix and reset the password manually.`,
       );
       return res.status(500).json({
         error:
@@ -106,6 +108,51 @@ export const getCurrentUser = async (req, res) => {
 // This endpoint exists for a clean API contract and future token blacklisting.
 export const logout = (req, res) => {
   res.status(200).json({ message: "Logged out successfully" });
+};
+
+// OAuth Login — after Supabase verifies the user, issue a backend JWT
+// The frontend has already verified the user exists via Supabase RLS.
+// This endpoint completes the flow by issuing a JWT for API access.
+export const oauthLogin = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
+    // Get user to verify they exist and are active
+    const user = await User.getUserByEmail(email);
+
+    if (!user) {
+      return res.status(401).json({ error: "User not found in system" });
+    }
+
+    // Check user_status — only 'Active' users can log in
+    if (user.user_status !== "Active") {
+      return res
+        .status(403)
+        .json({
+          error: "Your account is inactive. Contact the system administrator.",
+        });
+    }
+
+    const token = generateToken(user.system_users_id, user.email);
+
+    return res.status(200).json({
+      message: "OAuth login successful",
+      token,
+      user: {
+        system_users_id: user.system_users_id,
+        email: user.email,
+        full_name: user.full_name,
+        created_at: user.created_at,
+      },
+    });
+  } catch (error) {
+    console.error("OAuth login error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
 };
 
 // Get all users (protected — admin use only)

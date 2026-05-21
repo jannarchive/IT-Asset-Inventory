@@ -1,10 +1,11 @@
-import dotenv from 'dotenv';
-import express from 'express';
-import cors from 'cors';
-import pool from './config/Database.js';
+import dotenv from "dotenv";
+import express from "express";
+import cors from "cors";
+import pool from "./config/Database.js";
 
-import authRoutes from './routes/AuthRoutes.js';
-import assetRoutes from './routes/AssetRoutes.js';
+import authRoutes from "./routes/AuthRoutes.js";
+import assetRoutes from "./routes/AssetRoutes.js";
+import dashboardRoutes from "./routes/DashboardRoutes.js";
 
 dotenv.config();
 
@@ -43,6 +44,7 @@ app.get("/api/health", async (req, res) => {
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/assets", assetRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // 404 Handler
 app.use((req, res) => {

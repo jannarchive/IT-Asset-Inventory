@@ -1,0 +1,48 @@
+:root {
+  --color-primary: #0063a5;
+  --color-secondary: #daeafe;
+  --color-white: #f9fafb;
+  --color-red: #e52424;
+  --color-text-dark: #222222;
+  --color-text-gray: #767272;
+  --color-border: #aeacac;
+
+  --font-base: "Poppins", sans-serif;
+
+  /* Fluid spacing scale */
+  --space-xs: clamp(4px, 0.5vw, 8px);
+  --space-sm: clamp(8px, 1vw, 16px);
+  --space-md: clamp(16px, 2vw, 28px);
+  --space-lg: clamp(24px, 3vw, 48px);
+  --space-xl: clamp(40px, 6vw, 80px);
+}
+
+.bar-graph-container {
+  background: var(--color-white);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 20px 0;
+  color: var(--color-red);
+  font-family: var(--font-base);
+  text-align: center;
+}
+
+.bar-graph-container h3 {
+  margin-top: 0;
+  color: var(--color-text-dark);
+  font-size: 1.25rem;
+  margin-bottom: 15px;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 768px) {
+  .bar-graph-container {
+    padding: 15px;
+    margin: 15px 0;
+  }
+
+  .bar-graph-container h3 {
+    font-size: 1.1rem;
+  }
+}

@@ -1,5 +1,5 @@
 import express from 'express';
-import * as assetController from '../controllers/AssetController.js';
+import * as AssetController from '../controllers/AssetController.js';
 import { authenticateToken } from '../middleware/AuthMiddleware.js';
 
 const router = express.Router();
@@ -8,18 +8,18 @@ const router = express.Router();
 router.use(authenticateToken);
 
 // GET routes
-router.get("/", assetController.getAllAssets);
-router.get("/status", assetController.getAssetsByStatus);
-router.get("/category", assetController.getAssetsByCategory);
-router.get("/:id", assetController.getAssetById);
+router.get("/", AssetController.getAllAssets);
+router.get("/status", AssetController.getAssetsByStatus);
+router.get("/category", AssetController.getAssetsByCategory);
+router.get("/:id", AssetController.getAssetById);
 
 // POST route (admin only)
-router.post("/", assetController.createAsset);
+router.post("/", AssetController.createAsset);
 
 // PUT route (admin only)
-router.put("/:id", assetController.updateAsset);
+router.put("/:id", AssetController.updateAsset);
 
 // DELETE route (admin only)
-router.delete("/:id", assetController.deleteAsset);
+router.delete("/:id", AssetController.deleteAsset);
 
 export default router;

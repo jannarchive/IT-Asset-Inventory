@@ -18,185 +18,265 @@
 }
 
 .Admin-dashboard {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: auto;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: auto;
 }
 
 .Header {
-    flex: 0 0 auto;
+  flex: 0 0 auto;
 }
 
 .Main-content {
-    flex: 1;
-    display: flex;
+  flex: 1;
+  display: flex;
 }
 
 .Sidebar-placeholder {
-    width: 20%; 
-    flex-shrink: 0;
+  width: 20%;
+  flex-shrink: 0;
 }
 
 .Admin-dashboard .content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 90px 30px 30px 30px;
-    background-color: var(--color-white);
-    overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 90px 30px 30px 30px;
+  background-color: var(--color-white);
+  overflow-y: auto;
 }
 
 .h1 {
-    font-family: 'Poppins', sans-serif;
-    font-size: 32px;
-    font-weight: bold;
-    color: var(--color-text-dark);
-    margin: 20px 0;
+  font-family: "Poppins", sans-serif;
+  font-size: 32px;
+  font-weight: bold;
+  color: var(--color-text-dark);
+  margin: 20px 0;
 }
 
 .Dashboard-container {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-    width: 100%;
-    margin: 10px;
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  width: 100%;
+  margin: 10px;
 }
 
 .Dashboard-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
 
 .Date-container {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    font-size: 16px;
-    color: #333;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-size: 16px;
+  color: #333;
 }
 
 .Date-container h1 {
-    font-size: 50px;
-    font-weight: bold;
-    color: #000;
-    font-family:var(--font-base);
-    margin: 0;
+  font-size: 50px;
+  font-weight: bold;
+  color: #000;
+  font-family: var(--font-base);
+  margin: 0;
 }
 
 .Date-container h4 {
-    font-size: 20px;
-    font-weight: 400;
-    color: #000;
-    font-family:var(--font-base);
-    margin: 0;
-}
-
-.FilterDates-type-dropdown {
-    margin-top: 5px;
-    align-self: flex-end;
-}
-
-
-.Status-cards {
-    display: flex;
-    gap: 20px; 
-    flex-wrap: wrap; 
+  font-size: 20px;
+  font-weight: 400;
+  color: #000;
+  font-family: var(--font-base);
+  margin: 0;
 }
 
 .Data-panels {
-    display: flex;
-    justify-content: flex-start;
-    align-items: flex-start;
-    width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  width: 100%;
 }
 
 .Status-panel-container {
-    flex: 2; 
-    display: flex;
-    flex-direction: column;
+  flex: 2;
+  display: flex;
+  flex-direction: column;
 }
 
 .Status-card-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
-    gap: 20px 50px; 
-    max-width: 800px;
-    margin: 0; 
-    padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px 50px;
+  max-width: 800px;
+  margin: 0;
+  padding: 0;
 }
 
 .Pie-chart-panel {
-    flex: 1;
-    min-width: 400px;
-    max-width: 100%;
-    height: auto;
-    border: 1px solid #ccc;
-    padding: 10px;
-    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
-    background-color: #fff;
-    flex-shrink: 0;
+  flex: 1;
+  min-width: 400px;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid #ccc;
+  padding: 10px;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+  flex-shrink: 0;
 }
 
 .Pie-chart-panel h3 {
-    font-size: 24px;
-    font-weight: 500;
-    color: #000;
-    margin: 5px;
+  font-size: 24px;
+  font-weight: 500;
+  color: #000;
+  margin: 5px;
 }
 
-.Booking-list {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    margin-top: 20px;
-    box-sizing: border-box;
+/* Chart Section Styles */
+.chart-section {
+  width: 100%;
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
 }
 
-.Booking-list h2 {
+/* Recent Activity Section Styles */
+.recent-activity-section {
+  width: 100%;
+  font-family: var(--font-base);
+  background: var(--color-white);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin-top: 30px;
+}
+
+.recent-activity-section h3 {
+  font-size: clamp(5px, 10vw, 25px);
+  font-weight: 700;
+  font-family: var(--font-base);
+  color: var(--color-primary);
+  background-color: var(--color-secondary);
+  border-radius: 5px;
+  padding: 5px 10px;
+  margin-bottom: 20px;
+}
+
+/* Activity Table Styles */
+.activity-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  overflow-x: auto;
+}
+
+.activity-table thead {
+  background-color: #f0f0f0;
+  font-weight: 600;
+}
+
+.activity-table th,
+.activity-table td {
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+
+.activity-table th {
+  color: #333;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.activity-table tbody {
+  color: #555;
+  font-size: 14px;
+}
+
+.activity-table tbody tr:hover {
+  background-color: #f9f9f9;
+}
+
+.activity-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Error Message Styles */
+.error-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 200px;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  color: #721c24;
+  font-size: 16px;
+  font-family: "Poppins", sans-serif;
+}
+
+.error-message p {
+  margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .Admin-dashboard .content {
+    padding: 80px 15px 15px 15px;
+  }
+
+  .Status-card-container {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px 20px;
+  }
+
+  .Date-container h1 {
     font-size: 32px;
-    font-weight: 1000;
-    font-family: 'Poppins', sans-serif;
-    color: #2F3B8D;
-    background-color: #D5D7E8;
-    border-radius: 5px;
-    padding: 5px 10px;
-    margin-bottom: 20px;
+  }
+
+  .Date-container h4 {
+    font-size: 14px;
+  }
+
+  .activity-table {
+    font-size: 12px;
+  }
+
+  .activity-table th,
+  .activity-table td {
+    padding: 8px;
+  }
 }
 
-.Booking-list table {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: left;
-}
+@media (max-width: 480px) {
+  .Admin-dashboard .content {
+    padding: 70px 10px 10px 10px;
+  }
 
-.Booking-list thead {
-    background-color: #EBEDF2; 
-}
+  .Dashboard-container {
+    margin: 5px;
+    gap: 10px;
+  }
 
-.Booking-list th, 
-.Booking-list td {
-    padding: 12px;
-    border-bottom: 1px solid #ccc;
-    text-align: left;
-}
+  .Status-card-container {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
 
-.Booking-list th {
-    color: #3F4043;
-    font-size: 16px;
-}
+  .Date-container h1 {
+    font-size: 24px;
+  }
 
-.Booking-list tbody {
-    color: #323030;
-    font-size: 16px;
-}
+  .Date-container h4 {
+    font-size: 12px;
+  }
 
-.Booking-list tbody tr:first-child td {
-    border-top: none; 
-}
-
-.View-booking {
-    cursor: pointer;
+  .activity-table {
+    font-size: 11px;
+    overflow-x: scroll;
+  }
 }
