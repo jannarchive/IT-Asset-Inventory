@@ -236,18 +236,18 @@ function AdminDashboard() {
                       <th>Device ID</th>
                       <th>Action Type</th>
                       <th>Description</th>
-                      <th>System User</th>
+                      <th>Performed By</th>
                     </tr>
                   </thead>
                   <tbody>
                     {recentActivities.map((activity) => (
-                      <tr key={activity.activity_logs_id}>
-                        <td>{activity.activity_logs_id}</td>
-                        <td>{formatDate(activity.date_of_action)}</td>
-                        <td>{activity.device_id}</td>
-                        <td>{activity.action_type}</td>
+                      <tr key={activity.activity_log_id}>
+                        <td>{activity.activity_log_id}</td>
+                        <td>{formatDate(activity.created_at)}</td>
+                        <td>{activity.entity_id}</td>
+                        <td>{activity.action_type_name}</td>
                         <td>{activity.description}</td>
-                        <td>{activity.system_user ?? "System"}</td>
+                        <td>{activity.performed_by ?? "System"}</td>
                       </tr>
                     ))}
                   </tbody>

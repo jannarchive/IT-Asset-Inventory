@@ -9,9 +9,9 @@ class Dashboard {
   static async getDashboardStats() {
     const statsQuery = `
       SELECT
-        COUNT(*)                                                          AS total_assets,
-        COUNT(*) FILTER (WHERE s.status = 'Active')                      AS active_assets,
-        COUNT(*) FILTER (WHERE s.status IN ('Defective', 'Under Maintenance')) AS defective_assets
+        COUNT(*)                                                                  AS total_assets,
+        COUNT(*) FILTER (WHERE s.status_name = 'Active')                         AS active_assets,
+        COUNT(*) FILTER (WHERE s.status_name IN ('Defective', 'Under Maintenance')) AS defective_assets
       FROM assets a
       JOIN status s ON a.status_id = s.status_id
     `;
@@ -21,12 +21,14 @@ class Dashboard {
       FROM full_workstation fw
       WHERE NOT EXISTS (
         SELECT 1
-        FROM assets       a
-        JOIN asset_type   at ON a.asset_type_id = at.asset_type_id
-        WHERE a.device_id = fw.device_id
-          AND at.asset_type IN ('CPU', 'Monitor', 'Keyboard', 'Headset', 'Camera', 'Mouse')
-        GROUP BY a.device_id
-        HAVING COUNT(DISTINCT at.asset_type) = 4
+        FROM workstation_assets wa
+        JOIN assets a ON wa.asset_id = a.asset_id
+        JOIN asset_type at ON a.asset_type_id = at.asset_type_id
+        WHERE wa.device_id = fw.device_id
+          AND wa.removed_at IS NULL
+          AND at.asset_type_name IN ('CPU', 'Monitor', 'Keyboard', 'Headset', 'Camera', 'Mouse')
+        GROUP BY wa.device_id
+        HAVING COUNT(DISTINCT at.asset_type_name) = 6
       )
     `;
 
@@ -52,11 +54,11 @@ class Dashboard {
   static async getAssetTypesCounts() {
     const query = `
       SELECT
-        at.asset_type,
-        COUNT(a.assets_id) AS total
+        at.asset_type_name,
+        COUNT(a.asset_id) AS total
       FROM asset_type at
       LEFT JOIN assets a ON at.asset_type_id = a.asset_type_id
-      GROUP BY at.asset_type_id, at.asset_type
+      GROUP BY at.asset_type_id, at.asset_type_name
       ORDER BY total DESC
     `;
 
@@ -71,16 +73,16 @@ class Dashboard {
   static async getRecentActivities(limit = 15) {
     const query = `
       SELECT
-        aal.activity_logs_id,
-        aal.date_of_action,
-        aal.device_id,
-        aat.action_type,
+        aal.activity_log_id,
+        aal.entity_id,
+        aat.action_type_name,
         aal.description,
-        su.full_name AS system_user
-      FROM asset_activity_logs      aal
-      LEFT JOIN activity_action_type aat ON aal.action_type_id    = aat.action_type_id
-      LEFT JOIN system_users         su  ON aal.system_users_id   = su.system_users_id
-      ORDER BY aal.date_of_action DESC
+        su.full_name AS performed_by,
+        aal.created_at
+      FROM asset_activity_logs aal
+      LEFT JOIN activity_action_type aat ON aal.action_type_id = aat.action_type_id
+      LEFT JOIN system_users su ON aal.performed_by = su.system_users_id
+      ORDER BY aal.created_at DESC
       LIMIT $1
     `;
 

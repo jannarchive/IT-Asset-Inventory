@@ -1,5 +1,5 @@
 import * as Asset from "../models/Asset.js";
-import ActivityLogs from "../models/ActivityLogs.js";
+// import ActivityLogs from "../models/ActivityLogs.js";
 
 // Validates that a route param is a positive integer
 const parseId = (value) => {
@@ -41,27 +41,29 @@ export const getAssetById = async (req, res) => {
 // POST /assets
 export const createAsset = async (req, res) => {
   try {
-    const { assetName, assetTypeId, statusId, deviceId } = req.body;
+    const { assetCode, assetName, assetTypeId, statusId, serialNumber, warrantyExpiryDate, notes } = req.body;
 
-    if (!assetName || !assetTypeId || !statusId || !deviceId) {
+    if (!assetCode || !assetName || !assetTypeId || !statusId) {
       return res.status(400).json({
-        error: "Asset name, type, status, and device are required",
+        error: "Asset code, name, type, and status are required",
       });
     }
 
     const newAsset = await Asset.createAsset({
+      assetCode,
       assetName,
       assetTypeId,
       statusId,
-      deviceId,
+      serialNumber,
+      warrantyExpiryDate,
+      notes,
     });
 
-    // 🔹 LOG ACTIVITY - Asset created
+    /* 🔹 LOG ACTIVITY - Asset created (Note: Triggers handle this automatically now)
     if (req.userId) {
       await ActivityLogs.logAssetCreated(
-        newAsset.assets_id,
-        assetName,
-        deviceId,
+        newAsset.asset_id,
+        assetCode,
         req.userId,
       );
     }
@@ -69,7 +71,8 @@ export const createAsset = async (req, res) => {
     res.status(201).json({
       message: "Asset created successfully",
       asset: newAsset,
-    });
+    }); */
+    
   } catch (error) {
     console.error("Server error:", error);
     res.status(500).json({ error: "Failed to create asset" });
@@ -84,7 +87,7 @@ export const updateAsset = async (req, res) => {
       return res.status(400).json({ error: "Invalid asset ID" });
     }
 
-    const { assetName, statusId } = req.body;
+    const { assetName, statusId, warrantyStatusId, warrantyExpiryDate, notes } = req.body;
     if (!assetName || !statusId) {
       return res.status(400).json({
         error: "Asset name and status are required",
@@ -96,28 +99,33 @@ export const updateAsset = async (req, res) => {
       return res.status(404).json({ error: "Asset not found" });
     }
 
-    // 🔹 LOG ACTIVITY - Capture old status before update
-    const oldStatus = existing.status;
+    /* 🔹 LOG ACTIVITY - Capture old status before update
+    const oldStatus = existing.status_name;
+    const oldCode = existing.asset_code;
 
-    const updatedAsset = await Asset.updateAsset(id, { assetName, statusId });
+    const updatedAsset = await Asset.updateAsset(id, { 
+      assetName, 
+      statusId, 
+      warrantyStatusId, 
+      warrantyExpiryDate, 
+      notes 
+    });
 
     // Log activity based on what changed
     if (req.userId) {
       if (oldStatus !== statusId) {
         await ActivityLogs.logStatusChange(
           id,
-          assetName,
+          oldCode,
           oldStatus,
           statusId,
-          existing.device_id,
           req.userId,
         );
       } else {
         await ActivityLogs.logAssetUpdated(
           id,
-          assetName,
+          oldCode,
           { name: assetName, statusId },
-          existing.device_id,
           req.userId,
         );
       }
@@ -126,7 +134,8 @@ export const updateAsset = async (req, res) => {
     res.status(200).json({
       message: "Asset updated successfully",
       asset: updatedAsset,
-    });
+    });*/
+
   } catch (error) {
     console.error("Server error:", error);
     res.status(500).json({ error: "Failed to update asset" });
@@ -146,19 +155,18 @@ export const deleteAsset = async (req, res) => {
       return res.status(404).json({ error: "Asset not found" });
     }
 
-    // 🔹 LOG ACTIVITY - Before deletion
+    /* 🔹 LOG ACTIVITY - Before deletion (Note: Triggers handle this automatically)
     if (req.userId) {
       await ActivityLogs.logAssetDeleted(
         id,
-        existing.asset_name,
-        existing.device_id,
+        existing.asset_code,
         req.userId,
       );
     }
 
     await Asset.deleteAsset(id);
 
-    res.status(200).json({ message: "Asset deleted successfully" });
+    res.status(200).json({ message: "Asset deleted successfully" }); */
   } catch (error) {
     console.error("Server error:", error);
     res.status(500).json({ error: "Failed to delete asset" });
@@ -181,15 +189,15 @@ export const getAssetsByStatus = async (req, res) => {
   }
 };
 
-// GET /assets/category?categoryId=
-export const getAssetsByCategory = async (req, res) => {
+// GET /assets/type?typeId=
+export const getAssetsByType = async (req, res) => {
   try {
-    const categoryId = parseId(req.query.categoryId);
-    if (!categoryId) {
-      return res.status(400).json({ error: "A valid Category ID is required" });
+    const typeId = parseId(req.query.typeId);
+    if (!typeId) {
+      return res.status(400).json({ error: "A valid Type ID is required" });
     }
 
-    const assets = await Asset.getAssetsByCategory(categoryId);
+    const assets = await Asset.getAssetsByType(typeId);
     res.status(200).json({ assets });
   } catch (error) {
     console.error("Server error:", error);

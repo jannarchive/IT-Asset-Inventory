@@ -10,7 +10,7 @@ router.use(authenticateToken);
 // GET routes
 router.get("/", AssetController.getAllAssets);
 router.get("/status", AssetController.getAssetsByStatus);
-router.get("/category", AssetController.getAssetsByCategory);
+router.get("/type", AssetController.getAssetsByType);
 router.get("/:id", AssetController.getAssetById);
 
 // POST route (admin only)
