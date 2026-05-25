@@ -1,0 +1,537 @@
+:root {
+  --color-primary: #0063a5;
+  --color-secondary: #daeafe;
+  --color-white: #f9fafb;
+  --color-red: #e52424;
+  --color-text-dark: #222222;
+  --color-text-gray: #767272;
+  --color-border: #aeacac;
+  --color-table-header-bg: #eef2f7;
+  --color-row-hover: #f4f8fd;
+  --color-btn-edit-border: #aeacac;
+  --color-btn-delete-border: #aeacac;
+
+  --font-base: "Poppins", sans-serif;
+
+  /* Fluid spacing scale */
+  --space-xs: clamp(4px, 0.5vw, 8px);
+  --space-sm: clamp(8px, 1vw, 16px);
+  --space-md: clamp(16px, 2vw, 28px);
+  --space-lg: clamp(24px, 3vw, 48px);
+  --space-xl: clamp(40px, 6vw, 80px);
+}
+
+/* ============================================================
+   PAGE SHELL
+   ============================================================ */
+.Assets-overview {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: auto;
+  font-family: var(--font-base);
+}
+
+.Header {
+  flex: 0 0 auto;
+}
+
+.Main-content {
+  flex: 1;
+  display: flex;
+}
+
+.Sidebar-placeholder {
+  width: 20%;
+  flex-shrink: 0;
+}
+
+.Assets-overview .content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 90px 30px 30px 30px;
+  background-color: var(--color-white);
+  overflow-y: auto;
+}
+
+/* ============================================================
+   PAGE TITLE
+   ============================================================ */
+
+.Assets-overview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}   
+
+.Assets-overview h1 {
+  font-size: clamp(28px, 4vw, 50px);
+  font-weight: bold;
+  color: var(--color-text-dark);
+  margin: 0 0 var(--space-md) 0;
+}
+
+/* ============================================================
+   TABS — Full Workstation / Asset View
+   ============================================================ */
+.Assets-tabs {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  width: 98%;
+  border: 1.5px solid var(--color-border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: var(--space-md);
+  height: 48px;
+}
+
+.Assets-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-base);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--color-text-gray);
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+  padding: 0 var(--space-md);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.Assets-tab:hover:not(.Assets-tab--active) {
+  background-color: #f0f4f8;
+  color: var(--color-primary);
+}
+
+.Assets-tab--active {
+  background-color: var(--color-red);
+  color: #ffffff;
+  cursor: default;
+}
+
+/* Divider between tabs */
+.Assets-tab + .Assets-tab {
+  border-left: 1.5px solid var(--color-border);
+}
+
+.Assets-tab--active + .Assets-tab {
+  border-left: none;
+}
+
+/* ============================================================
+   ACTION BAR — New Asset Record · Filters · Edit · Delete
+   ============================================================ */
+.Assets-overview-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 98%;
+  padding: 10px 0;
+  flex-wrap: wrap;
+}
+
+/* New Asset Record button */
+.Btn-new-asset {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  background-color: var(--color-primary);
+  color: #ffffff;
+  font-family: var(--font-base);
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.18s ease,
+    box-shadow 0.18s ease;
+  letter-spacing: 0.01em;
+}
+
+.Btn-new-asset:hover {
+  background-color: #00518a;
+  box-shadow: 0 2px 8px rgba(0, 99, 165, 0.25);
+}
+
+.Btn-new-asset:active {
+  background-color: #004070;
+}
+
+.Btn-new-asset__icon {
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 400;
+}
+
+/* Filter dropdowns */
+.Assets-overview .filters {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: var(--color-text-dark);
+  font-family: var(--font-base);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  min-width: 170px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23767272' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 34px;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.Filter-dropdown:focus,
+.Filter-dropdown:hover {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 99, 165, 0.12);
+}
+
+/* Spacer pushes Edit & Delete to the right */
+.Header-spacer {
+  flex: 1;
+}
+
+/* Edit button */
+.Btn-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 20px;
+  border: 1.5px solid var(--color-btn-edit-border);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--color-text-dark);
+  font-family: var(--font-base);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.Btn-edit:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-secondary);
+  box-shadow: 0 2px 6px rgba(0, 99, 165, 0.12);
+}
+
+.Btn-edit:active {
+  background: #c5ddf5;
+}
+
+/* Delete button */
+.Btn-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 20px;
+  border: 1.5px solid var(--color-btn-delete-border);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--color-text-dark);
+  font-family: var(--font-base);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.Btn-delete:hover {
+  border-color: var(--color-red);
+  color: var(--color-red);
+  background: #fdeaea;
+  box-shadow: 0 2px 6px rgba(229, 36, 36, 0.12);
+}
+
+.Btn-delete:active {
+  background: #f8c5c5;
+}
+
+/* ============================================================
+   SEARCH BAR
+   ============================================================ */
+.Search-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 580px;
+  margin-bottom: var(--space-md);
+}
+
+.Search-bar input {
+  padding: 10px 42px 10px 14px;
+  font-family: var(--font-base);
+  font-size: 14px;
+  color: var(--color-text-dark);
+  border: 1.5px solid var(--color-border);
+  border-radius: 6px;
+  width: 100%;
+  background: #ffffff;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.Search-bar input::placeholder {
+  color: var(--color-text-gray);
+}
+
+.Search-bar input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 99, 165, 0.12);
+}
+
+.Search-icon {
+  position: absolute;
+  right: 14px;
+  color: var(--color-text-gray);
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+/* ============================================================
+   MUI DataTable — overrides & wrappers
+   ============================================================ */
+
+/* Outer wrapper keeps the table flush and adds border */
+.Assets-table-wrapper {
+  width: 98%;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1.5px solid #dde3ea;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.Assets-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #ffffff;
+  font-family: var(--font-base);
+}
+
+/* ── Table head ── */
+.Assets-table thead {
+  background-color: var(--color-table-header-bg);
+}
+
+.Assets-table thead th {
+  color: var(--color-text-dark);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 14px 16px;
+  border-bottom: 2px solid #d0d8e4;
+  white-space: nowrap;
+  text-align: left;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease;
+}
+
+.Assets-table thead th:hover {
+  background-color: #e0e7f0;
+}
+
+/* ── Table body rows ── */
+.Assets-table tbody tr {
+  transition: background-color 0.15s ease;
+  cursor: pointer;
+  border-bottom: 1px solid #eaecf0;
+}
+
+.Assets-table tbody tr:hover {
+  background-color: var(--color-row-hover);
+}
+
+.Assets-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+/* ── Table body cells ── */
+.Assets-table tbody td {
+  font-family: var(--font-base);
+  font-size: 14px;
+  color: var(--color-text-dark);
+  padding: 13px 16px;
+}
+
+/* ── Checkbox column ── */
+.Assets-table input[type="checkbox"] {
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-primary);
+}
+
+/* ── Device ID column — styled as a subtle badge ── */
+.Assets-table .cell-device-id {
+  font-weight: 600;
+  color: var(--color-primary);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+
+/* ── Status container ── */
+.status-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Actions cell ── */
+.actions-cell {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  color: var(--color-text-dark);
+}
+
+.action-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-secondary);
+}
+
+.action-btn.edit-btn {
+  color: var(--color-primary);
+}
+
+/* ── Error message ── */
+.error-message {
+  padding: 12px 16px;
+  margin-bottom: var(--space-md);
+  background-color: #fdeaea;
+  color: var(--color-red);
+  border: 1px solid var(--color-red);
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+/* ============================================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================================ */
+@media (max-width: 900px) {
+  .Assets-overview {
+    padding: 70px 16px 24px 16px;
+  }
+
+  .Assets-tabs {
+    width: 100%;
+  }
+
+  .Assets-overview-header {
+    width: 100%;
+    gap: var(--space-xs);
+  }
+
+  .Filter-dropdown {
+    min-width: 140px;
+    font-size: 13px;
+  }
+
+  .Btn-new-asset,
+  .Btn-edit,
+  .Btn-delete {
+    font-size: 13px;
+    padding: 8px 14px;
+  }
+
+  .Assets-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .Header-spacer {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .Assets-overview-header {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .Btn-new-asset {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .Filter-dropdown {
+    flex: 1 1 calc(50% - 4px);
+    min-width: unset;
+  }
+
+  .Btn-edit,
+  .Btn-delete {
+    flex: 1 1 calc(50% - 4px);
+    justify-content: center;
+  }
+
+  .Assets-tabs {
+    height: 42px;
+  }
+
+  .Assets-tab {
+    font-size: 13px;
+  }
+}

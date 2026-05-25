@@ -47,14 +47,6 @@
   overflow-y: auto;
 }
 
-.h1 {
-  font-family: "Poppins", sans-serif;
-  font-size: 32px;
-  font-weight: bold;
-  color: var(--color-text-dark);
-  margin: 20px 0;
-}
-
 .Dashboard-container {
   display: flex;
   gap: 20px;
@@ -79,26 +71,26 @@
 }
 
 .Date-container h1 {
-  font-size: 50px;
+  font-size: clamp(28px, 4vw, 50px);
   font-weight: bold;
-  color: #000;
+  color: var(--color-text-dark);
   font-family: var(--font-base);
-  margin: 0;
+  
 }
 
 .Date-container h4 {
   font-size: 20px;
   font-weight: 400;
-  color: #000;
+  color: var(--color-text-dark);
   font-family: var(--font-base);
-  margin: 0;
 }
 
 .Data-panels {
+  width: 100%;
   display: flex;
   justify-content: flex-start;
   align-items: flex-start;
-  width: 100%;
+  font-family: var(--font-base);
 }
 
 .Status-panel-container {

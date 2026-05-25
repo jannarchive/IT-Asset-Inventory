@@ -7,10 +7,23 @@ const parseId = (value) => {
   return Number.isInteger(id) && id > 0 ? id : null;
 };
 
-// GET /assets
+// GET /assets - with optional filtering and search
 export const getAllAssets = async (req, res) => {
   try {
-    const assets = await Asset.getAllAssets();
+    const filters = {};
+
+    // Parse optional query parameters
+    if (req.query.assetTypeId) {
+      filters.assetTypeId = parseInt(req.query.assetTypeId, 10);
+    }
+    if (req.query.statusId) {
+      filters.statusId = parseInt(req.query.statusId, 10);
+    }
+    if (req.query.search) {
+      filters.search = req.query.search;
+    }
+
+    const assets = await Asset.getAllAssets(filters);
     res.status(200).json({ assets });
   } catch (error) {
     console.error("Server error:", error);
@@ -41,7 +54,15 @@ export const getAssetById = async (req, res) => {
 // POST /assets
 export const createAsset = async (req, res) => {
   try {
-    const { assetCode, assetName, assetTypeId, statusId, serialNumber, warrantyExpiryDate, notes } = req.body;
+    const {
+      assetCode,
+      assetName,
+      assetTypeId,
+      statusId,
+      serialNumber,
+      warrantyExpiryDate,
+      notes,
+    } = req.body;
 
     if (!assetCode || !assetName || !assetTypeId || !statusId) {
       return res.status(400).json({
@@ -59,20 +80,10 @@ export const createAsset = async (req, res) => {
       notes,
     });
 
-    /* 🔹 LOG ACTIVITY - Asset created (Note: Triggers handle this automatically now)
-    if (req.userId) {
-      await ActivityLogs.logAssetCreated(
-        newAsset.asset_id,
-        assetCode,
-        req.userId,
-      );
-    }
-
     res.status(201).json({
       message: "Asset created successfully",
       asset: newAsset,
-    }); */
-    
+    });
   } catch (error) {
     console.error("Server error:", error);
     res.status(500).json({ error: "Failed to create asset" });
@@ -87,7 +98,8 @@ export const updateAsset = async (req, res) => {
       return res.status(400).json({ error: "Invalid asset ID" });
     }
 
-    const { assetName, statusId, warrantyStatusId, warrantyExpiryDate, notes } = req.body;
+    const { assetName, statusId, warrantyStatusId, warrantyExpiryDate, notes } =
+      req.body;
     if (!assetName || !statusId) {
       return res.status(400).json({
         error: "Asset name and status are required",
@@ -99,43 +111,18 @@ export const updateAsset = async (req, res) => {
       return res.status(404).json({ error: "Asset not found" });
     }
 
-    /* 🔹 LOG ACTIVITY - Capture old status before update
-    const oldStatus = existing.status_name;
-    const oldCode = existing.asset_code;
-
-    const updatedAsset = await Asset.updateAsset(id, { 
-      assetName, 
-      statusId, 
-      warrantyStatusId, 
-      warrantyExpiryDate, 
-      notes 
+    const updatedAsset = await Asset.updateAsset(id, {
+      assetName,
+      statusId,
+      warrantyStatusId,
+      warrantyExpiryDate,
+      notes,
     });
-
-    // Log activity based on what changed
-    if (req.userId) {
-      if (oldStatus !== statusId) {
-        await ActivityLogs.logStatusChange(
-          id,
-          oldCode,
-          oldStatus,
-          statusId,
-          req.userId,
-        );
-      } else {
-        await ActivityLogs.logAssetUpdated(
-          id,
-          oldCode,
-          { name: assetName, statusId },
-          req.userId,
-        );
-      }
-    }
 
     res.status(200).json({
       message: "Asset updated successfully",
       asset: updatedAsset,
-    });*/
-
+    });
   } catch (error) {
     console.error("Server error:", error);
     res.status(500).json({ error: "Failed to update asset" });
@@ -155,18 +142,9 @@ export const deleteAsset = async (req, res) => {
       return res.status(404).json({ error: "Asset not found" });
     }
 
-    /* 🔹 LOG ACTIVITY - Before deletion (Note: Triggers handle this automatically)
-    if (req.userId) {
-      await ActivityLogs.logAssetDeleted(
-        id,
-        existing.asset_code,
-        req.userId,
-      );
-    }
-
     await Asset.deleteAsset(id);
 
-    res.status(200).json({ message: "Asset deleted successfully" }); */
+    res.status(200).json({ message: "Asset deleted successfully" });
   } catch (error) {
     console.error("Server error:", error);
     res.status(500).json({ error: "Failed to delete asset" });
