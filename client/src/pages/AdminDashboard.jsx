@@ -37,7 +37,7 @@ const STATUS_CONFIG = [
   },
   {
     key: "incompleteWorkstations",
-    label: "Incomplete Workstations",
+    label: "Workstations with incomplete peripheral",
     icon: <RemoveFromQueueRoundedIcon />,
     color: "#f39c12",
   },

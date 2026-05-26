@@ -57,19 +57,18 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
+    text-align: right;
   }
   
   .Status-card-count {
     font-size: 26px;
     font-weight: normal;
-    margin: 0;
     color: var(--color-text-dark);
   }
   
   .Status-card-status {
     font-size: 16px;
     color: var(--color-text-dark);
-    margin: 0;
   }
   
   .Status-card-divider {

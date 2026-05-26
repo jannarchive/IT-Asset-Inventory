@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import SearchIcon from "@mui/icons-material/Search";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import { DataGrid } from "@mui/x-data-grid";
 
 import NavigationBar from "../components/NavigationBar.jsx";
 import Sidebar from "../components/Sidebar.jsx";
@@ -19,200 +21,308 @@ function AdminAssetsOverview() {
   // State
   // ---------------------------------------------------------------------------
 
-  const [assets, setAssets] = useState([]);
-  const [sortedFilteredAssets, setSortedFilteredAssets] = useState([]);
-
-  const [assetTypes, setAssetTypes] = useState([]);
-  const [statuses, setStatuses] = useState([]);
-
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedAssetType, setSelectedAssetType] = useState("All Types");
-  const [selectedStatus, setSelectedStatus] = useState("All Statuses");
-
-  const [sortConfig, setSortConfig] = useState({
-    key: null,
-    direction: "asc",
-  });
-
   const [activeTab, setActiveTab] = useState("workstation");
-
-  const [selectedAssets, setSelectedAssets] = useState(new Set());
-  const [selectAll, setSelectAll] = useState(false);
-
   const [error, setError] = useState("");
 
+  // Shared state
+  const [deviceCategories, setDeviceCategories] = useState([]);
+  const [assetTypes, setAssetTypes] = useState([]);
+  const [teams, setTeams] = useState([]);
+
+  // Full Workstation View state
+  const [workstations, setWorkstations] = useState([]);
+  const [workstationRows, setWorkstationRows] = useState([]);
+  const [workstationSearch, setWorkstationSearch] = useState("");
+  const [workstationCategory, setWorkstationCategory] = useState("All Device Categories");
+  const [workstationTeam, setWorkstationTeam] = useState("All Teams");
+  const [workstationPaginationModel, setWorkstationPaginationModel] = useState({ pageSize: 10,page: 0 });
+
+  // Asset View state
+  const [assets, setAssets] = useState([]);
+  const [assetRows, setAssetRows] = useState([]);
+  const [assetSearch, setAssetSearch] = useState("");
+  const [assetType, setAssetType] = useState("All Asset Types");
+  const [assetTeam, setAssetTeam] = useState("All Teams");
+  const [assetPaginationModel, setAssetPaginationModel] = useState({ pageSize: 10, page: 0 });
+
   // ---------------------------------------------------------------------------
-  // Fetch Assets
+  // Fetch Full Workstation Data
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchWorkstations = async () => {
       try {
-        const response = await api.get("/api/assets");
+        const response = await api.get("/api/assets", {
+          params: {
+            search: workstationSearch,
+            deviceCategory: workstationCategory,
+            team: workstationTeam,
+          },
+        });
 
-        const fetchedAssets = response.data.assets || [];
-
-        setAssets(fetchedAssets);
-
-        const uniqueTypes = [
-          "All Types",
-          ...new Set(fetchedAssets.map((asset) => asset.asset_type_name)),
-        ];
-
-        const uniqueStatuses = [
-          "All Statuses",
-          ...new Set(fetchedAssets.map((asset) => asset.status_name)),
-        ];
-
-        setAssetTypes(uniqueTypes);
-        setStatuses(uniqueStatuses);
+        if (response.data.length > 0) {
+          setWorkstations(response.data);
+          // Extract unique categories and teams
+          const uniqueCategories = [
+            "All Device Categories",
+            ...new Set(response.data.map((w) => w.device_category)),
+          ];
+          const uniqueTeams = [
+            "All Teams",
+            ...new Set(response.data.map((w) => w.team).filter(Boolean)),
+          ];
+          setDeviceCategories(uniqueCategories);
+          setTeams(uniqueTeams);
+        } else {
+          setError("No workstation records found");
+          setWorkstations([]);
+        }
       } catch (err) {
-        console.error("Error fetching assets:", err);
-        setError("An error occurred while fetching assets");
+        console.error("Error fetching workstations:", err);
+        setError("An error occurred while fetching workstations");
+        setWorkstations([]);
       }
     };
 
-    fetchData();
-  }, []);
+    fetchWorkstations();
+  }, [workstationSearch, workstationCategory, workstationTeam]);
 
   // ---------------------------------------------------------------------------
-  // Filter & Sort Assets
+  // Fetch Asset Data
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
-    const filteredAssets = [...assets]
-      .filter((asset) => {
-        const matchesType =
-          selectedAssetType === "All Types" ||
-          asset.asset_type_name === selectedAssetType;
+    const fetchAssetData = async () => {
+      try {
+        const response = await api.get("/api/assets", {
+          params: {
+            search: assetSearch,
+            assetType: assetType,
+            team: assetTeam,
+          },
+        });
 
-        const matchesStatus =
-          selectedStatus === "All Statuses" ||
-          asset.status_name === selectedStatus;
-
-        const matchesSearch =
-          asset.asset_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          asset.asset_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          asset.serial_number?.toLowerCase().includes(searchTerm.toLowerCase());
-
-        return matchesType && matchesStatus && matchesSearch;
-      })
-      .sort((a, b) => {
-        if (!sortConfig.key) return 0;
-
-        const valueA = a[sortConfig.key];
-        const valueB = b[sortConfig.key];
-
-        if (valueA === null || valueA === undefined) return 1;
-        if (valueB === null || valueB === undefined) return -1;
-
-        const strA = String(valueA).toLowerCase();
-        const strB = String(valueB).toLowerCase();
-
-        if (strA < strB) {
-          return sortConfig.direction === "asc" ? -1 : 1;
+        if (response.data.length > 0) {
+          setAssets(response.data);
+          // Extract unique asset types and teams
+          const uniqueTypes = [
+            "All Asset Types",
+            ...new Set(response.data.map((a) => a.asset_type_name)),
+          ];
+          const uniqueTeams = [
+            "All Teams",
+            ...new Set(response.data.map((a) => a.team).filter(Boolean)),
+          ];
+          setAssetTypes(uniqueTypes);
+          setTeams(uniqueTeams);
+        } else {
+          setError("No asset records found");
+          setAssets([]);
         }
+      } catch (err) {
+        console.error("Error fetching assets:", err);
+        setError("An error occurred while fetching assets");
+        setAssets([]);
+      }
+    };
 
-        if (strA > strB) {
-          return sortConfig.direction === "asc" ? 1 : -1;
-        }
+    fetchAssetData();
+  }, [assetSearch, assetType, assetTeam]);
 
-        return 0;
-      });
+  // ---------------------------------------------------------------------------
+  // Transform data to DataGrid rows
+  // ---------------------------------------------------------------------------
 
-    setSortedFilteredAssets(filteredAssets);
-  }, [assets, searchTerm, selectedAssetType, selectedStatus, sortConfig]);
+  useEffect(() => {
+    const workstationDataRows = workstations.map((ws, index) => ({
+      id: ws.device_id || index,
+      device_id: ws.device_id,
+      device_category: ws.device_category,
+      device_name: ws.device_name,
+      model: ws.model,
+      assigned_user: ws.assigned_user,
+      employee_number: ws.employee_number,
+      team: ws.team,
+      location: ws.location,
+      date_assigned: ws.date_assigned,
+      accountability_form: ws.accountability_form,
+      device_status: ws.device_status,
+      processor_code: ws.processor_code,
+      processor_serial: ws.processor_serial,
+      processor: ws.processor,
+      memory: ws.memory,
+      motherboard: ws.motherboard,
+      storage: ws.storage,
+      monitor1_code: ws.monitor1_code,
+      monitor1_serial: ws.monitor1_serial,
+      monitor1: ws.monitor1,
+      monitor1_status: ws.monitor1_status,
+      monitor2_code: ws.monitor2_code,
+      monitor2_serial: ws.monitor2_serial,
+      monitor2: ws.monitor2,
+      monitor2_status: ws.monitor2_status,
+      keyboard_code: ws.keyboard_code,
+      keyboard_serial: ws.keyboard_serial,
+      keyboard: ws.keyboard,
+      keyboard_status: ws.keyboard_status,
+      mouse_code: ws.mouse_code,
+      mouse_serial: ws.mouse_serial,
+      mouse: ws.mouse,
+      mouse_status: ws.mouse_status,
+      headset_code: ws.headset_code,
+      headset_serial: ws.headset_serial,
+      headset: ws.headset,
+      headset_status: ws.headset_status,
+      webcam_code: ws.webcam_code,
+      webcam_serial: ws.webcam_serial,
+      webcam: ws.webcam,
+      webcam_status: ws.webcam_status,
+      supplier: ws.supplier,
+      notes: ws.notes,
+      last_updated: ws.last_updated,
+    }));
+    setWorkstationRows(workstationDataRows);
+  }, [workstations]);
+
+  useEffect(() => {
+    const assetDataRows = assets.map((asset, index) => ({
+      id: asset.asset_id || index,
+      asset_id: asset.asset_id,
+      asset_code: asset.asset_code,
+      serial_number: asset.serial_number,
+      asset_type_name: asset.asset_type_name,
+      asset_name: asset.asset_name,
+      status_name: asset.status_name,
+      parent_device_id: asset.parent_device_id,
+      assigned_user: asset.assigned_user,
+      employee_number: asset.employee_number,
+      team: asset.team,
+    }));
+    setAssetRows(assetDataRows);
+  }, [assets]);
+
+  // ---------------------------------------------------------------------------
+  // DataGrid Column Definitions
+  // ---------------------------------------------------------------------------
+
+  const fullWorkstationColumns = [
+    { field: "device_id", headerName: "Device ID", width: 120 },
+    { field: "device_category", headerName: "Device Category", width: 150 },
+    { field: "device_name", headerName: "Device Name", width: 150 },
+    { field: "model", headerName: "Model", width: 130 },
+    { field: "assigned_user", headerName: "Assigned User", width: 140 },
+    { field: "employee_number", headerName: "Employee Number", width: 150 },
+    { field: "team", headerName: "Team", width: 120 },
+    { field: "location", headerName: "Location", width: 130 },
+    { field: "date_assigned", headerName: "Date Assigned", width: 140 },
+    {
+      field: "accountability_form",
+      headerName: "Accountability Form",
+      width: 160,
+    },
+    { field: "device_status", headerName: "Device Status", width: 140 },
+    { field: "processor_code", headerName: "Processor Code", width: 140 },
+    { field: "processor_serial", headerName: "Processor Serial", width: 140 },
+    { field: "processor", headerName: "Processor", width: 130 },
+    { field: "memory", headerName: "Memory", width: 110 },
+    { field: "motherboard", headerName: "Motherboard", width: 130 },
+    { field: "storage", headerName: "Storage", width: 110 },
+    { field: "monitor1_code", headerName: "Monitor 1 Code", width: 140 },
+    { field: "monitor1_serial", headerName: "Monitor 1 Serial", width: 140 },
+    { field: "monitor1", headerName: "Monitor 1", width: 130 },
+    { field: "monitor1_status", headerName: "Monitor 1 Status", width: 150 },
+    { field: "monitor2_code", headerName: "Monitor 2 Code", width: 140 },
+    { field: "monitor2_serial", headerName: "Monitor 2 Serial", width: 140 },
+    { field: "monitor2", headerName: "Monitor 2", width: 130 },
+    { field: "monitor2_status", headerName: "Monitor 2 Status", width: 150 },
+    { field: "keyboard_code", headerName: "Keyboard Code", width: 140 },
+    { field: "keyboard_serial", headerName: "Keyboard Serial", width: 140 },
+    { field: "keyboard", headerName: "Keyboard", width: 120 },
+    { field: "keyboard_status", headerName: "Keyboard Status", width: 150 },
+    { field: "mouse_code", headerName: "Mouse Code", width: 130 },
+    { field: "mouse_serial", headerName: "Mouse Serial", width: 130 },
+    { field: "mouse", headerName: "Mouse", width: 110 },
+    { field: "mouse_status", headerName: "Mouse Status", width: 140 },
+    { field: "headset_code", headerName: "Headset Code", width: 140 },
+    { field: "headset_serial", headerName: "Headset Serial", width: 140 },
+    { field: "headset", headerName: "Headset", width: 120 },
+    { field: "headset_status", headerName: "Headset Status", width: 150 },
+    { field: "webcam_code", headerName: "Webcam Code", width: 140 },
+    { field: "webcam_serial", headerName: "Webcam Serial", width: 140 },
+    { field: "webcam", headerName: "Webcam", width: 120 },
+    { field: "webcam_status", headerName: "Webcam Status", width: 150 },
+    { field: "supplier", headerName: "Supplier", width: 130 },
+    { field: "notes", headerName: "Notes", width: 200 },
+    { field: "last_updated", headerName: "Last Updated", width: 150 },
+  ];
+
+  const assetViewColumns = [
+    { field: "asset_code", headerName: "Asset Code", width: 130 },
+    { field: "serial_number", headerName: "Serial Number", width: 150 },
+    { field: "asset_type_name", headerName: "Asset Type", width: 150 },
+    { field: "asset_name", headerName: "Asset Name", width: 150 },
+    {
+      field: "status_name",
+      headerName: "Asset Status",
+      width: 140,
+      renderCell: (params) => (
+        <div className="status-container">
+          <span
+            className="status-dot"
+            style={{
+              backgroundColor: getStatusColor(params.value),
+            }}
+          />
+          {params.value}
+        </div>
+      ),
+    },
+    { field: "parent_device_id", headerName: "Parent Device ID", width: 150 },
+    { field: "assigned_user", headerName: "Assigned User", width: 150 },
+    { field: "employee_number", headerName: "Employee Number", width: 150 },
+    { field: "team", headerName: "Team", width: 120 },
+    {
+      field: "actions",
+      headerName: "Actions",
+      width: 100,
+      sortable: false,
+      renderCell: (params) => (
+        <button
+          className="action-btn view-btn"
+          onClick={() => handleViewAsset(params.row)}
+          title="View asset"
+        >
+          <VisibilityIcon style={{ fontSize: "16px" }} />
+        </button>
+      ),
+    },
+  ];
 
   // ---------------------------------------------------------------------------
   // Handlers
   // ---------------------------------------------------------------------------
 
-  const handleFilterChange = (type, selectedOption) => {
-    if (type === "assetType") {
-      setSelectedAssetType(selectedOption);
-    }
-
-    if (type === "status") {
-      setSelectedStatus(selectedOption);
-    }
-  };
-
-  const handleSort = (key) => {
-    setSortConfig((prevConfig) => ({
-      key,
-      direction:
-        prevConfig.key === key && prevConfig.direction === "asc"
-          ? "desc"
-          : "asc",
-    }));
-  };
-
-  const handleSelectAsset = (assetId) => {
-    const newSelected = new Set(selectedAssets);
-
-    if (newSelected.has(assetId)) {
-      newSelected.delete(assetId);
-    } else {
-      newSelected.add(assetId);
-    }
-
-    setSelectedAssets(newSelected);
-
-    setSelectAll(newSelected.size === sortedFilteredAssets.length);
-  };
-
-  const handleSelectAll = () => {
-    if (selectAll) {
-      setSelectedAssets(new Set());
-      setSelectAll(false);
-
-      return;
-    }
-
-    const allIds = new Set(sortedFilteredAssets.map((asset) => asset.asset_id));
-
-    setSelectedAssets(allIds);
-    setSelectAll(true);
-  };
-
-  const handleDeleteAssets = async () => {
-    if (selectedAssets.size === 0) {
-      alert("Please select at least one asset to delete");
-      return;
-    }
-
-    const confirmed = window.confirm(
-      `Are you sure you want to delete ${selectedAssets.size} asset(s)?`,
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      const deletePromises = Array.from(selectedAssets).map((assetId) =>
-        api.delete(`/api/assets/${assetId}`),
-      );
-
-      await Promise.all(deletePromises);
-
-      const response = await api.get("/api/assets");
-
-      setAssets(response.data.assets || []);
-      setSelectedAssets(new Set());
-      setSelectAll(false);
-    } catch (err) {
-      console.error("Error deleting assets:", err);
-      setError("An error occurred while deleting assets");
-    }
-  };
-
-  const handleEditAsset = (asset) => {
-    console.log(`Editing asset ${asset.asset_id}`);
-
-    navigate(`/edit-asset/${asset.asset_id}`, {
+  const handleViewAsset = (asset) => {
+    console.log(`Viewing asset ${asset.asset_id}`);
+    navigate(`/view-asset/${asset.asset_id}`, {
       state: { asset },
     });
+  };
+
+  const handleWorkstationCategoryChange = (category) => {
+    setWorkstationCategory(category);
+  };
+
+  const handleWorkstationTeamChange = (team) => {
+    setWorkstationTeam(team);
+  };
+
+  const handleAssetTypeChange = (type) => {
+    setAssetType(type);
+  };
+
+  const handleAssetTeamChange = (team) => {
+    setAssetTeam(team);
   };
 
   // ---------------------------------------------------------------------------
@@ -256,217 +366,145 @@ function AdminAssetsOverview() {
               </button>
             </div>
 
-            {/* Search Bar */}
-            <div className="Search-bar">
-              <input
-                type="text"
-                placeholder="Search by asset code, name, or serial number"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-
-              <SearchIcon className="Search-icon" />
-            </div>
-
-            {/* Filters & Actions */}
-            <div className="Assets-overview-header">
-              <select
-                className="filters Filter-dropdown"
-                value={selectedAssetType}
-                onChange={(e) =>
-                  handleFilterChange("assetType", e.target.value)
-                }
-              >
-                {assetTypes.map((type, index) => (
-                  <option key={index} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                className="filters Filter-dropdown"
-                value={selectedStatus}
-                onChange={(e) => handleFilterChange("status", e.target.value)}
-              >
-                {statuses.map((status, index) => (
-                  <option key={index} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-
-              <div className="Header-spacer"></div>
-
-              <button className="Btn-edit" disabled={selectedAssets.size !== 1}>
-                <EditIcon style={{ fontSize: "16px" }} />
-                Edit
-              </button>
-
-              <button
-                className="Btn-delete"
-                onClick={handleDeleteAssets}
-                disabled={selectedAssets.size === 0}
-              >
-                <DeleteIcon style={{ fontSize: "16px" }} />
-                Delete
-              </button>
-            </div>
-
             {/* Error Message */}
             {error && <div className="error-message">{error}</div>}
 
-            {/* Assets Table */}
-            <div className="Assets-table-wrapper">
-              <table className="Assets-table">
-                <thead>
-                  <tr>
-                    <th>
-                      <input
-                        type="checkbox"
-                        checked={selectAll}
-                        onChange={handleSelectAll}
-                      />
-                    </th>
+            {/* Full Workstation View */}
+            {activeTab === "workstation" && (
+              <div className="view-section">
+                {/* Search Bar */}
+                <div className="Search-bar">
+                  <input
+                    type="text"
+                    placeholder="Search by device ID, category, assigned user, or team"
+                    value={workstationSearch}
+                    onChange={(e) => setWorkstationSearch(e.target.value)}
+                  />
+                  <SearchIcon className="Search-icon" />
+                </div>
 
-                    <th onClick={() => handleSort("asset_code")}>
-                      ASSET CODE
-                      <span className="sort-arrow">
-                        {sortConfig.key === "asset_code"
-                          ? sortConfig.direction === "asc"
-                            ? "▲"
-                            : "▼"
-                          : ""}
-                      </span>
-                    </th>
+                {/* Filters */}
+                <div className="Assets-overview-header">
+                  <select
+                    className="filters Filter-dropdown"
+                    value={workstationCategory}
+                    onChange={(e) =>
+                      handleWorkstationCategoryChange(e.target.value)
+                    }
+                  >
+                    {deviceCategories.map((category, index) => (
+                      <option key={index} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
 
-                    <th onClick={() => handleSort("asset_name")}>
-                      ASSET NAME
-                      <span className="sort-arrow">
-                        {sortConfig.key === "asset_name"
-                          ? sortConfig.direction === "asc"
-                            ? "▲"
-                            : "▼"
-                          : ""}
-                      </span>
-                    </th>
+                  <select
+                    className="filters Filter-dropdown"
+                    value={workstationTeam}
+                    onChange={(e) =>
+                      handleWorkstationTeamChange(e.target.value)
+                    }
+                  >
+                    {teams.map((team, index) => (
+                      <option key={index} value={team}>
+                        {team}
+                      </option>
+                    ))}
+                  </select>
 
-                    <th onClick={() => handleSort("asset_type_name")}>
-                      TYPE
-                      <span className="sort-arrow">
-                        {sortConfig.key === "asset_type_name"
-                          ? sortConfig.direction === "asc"
-                            ? "▲"
-                            : "▼"
-                          : ""}
-                      </span>
-                    </th>
+                  <div className="Header-spacer"></div>
+                </div>
 
-                    <th onClick={() => handleSort("serial_number")}>
-                      SERIAL NUMBER
-                      <span className="sort-arrow">
-                        {sortConfig.key === "serial_number"
-                          ? sortConfig.direction === "asc"
-                            ? "▲"
-                            : "▼"
-                          : ""}
-                      </span>
-                    </th>
+                {/* DataGrid */}
+                <div className="datagrid-wrapper">
+                  <DataGrid
+                    rows={workstationRows}
+                    columns={fullWorkstationColumns}
+                    checkboxSelection
+                    disableMultipleRowSelection={false}
+                    pageSizeOptions={[10, 25, 50]}
+                    paginationModel={workstationPaginationModel}
+                    onPaginationModelChange={setWorkstationPaginationModel}
+                    showToolbar
+                    sx={{
+                      border: "1px solid #dde3ea",
+                      "& .MuiDataGrid-cell": {
+                        overflow: "visible",
+                        padding: "8px 16px",
+                      },
+                    }}
+                  />
+                </div>
+              </div>
+            )}
 
-                    <th onClick={() => handleSort("status_name")}>
-                      STATUS
-                      <span className="sort-arrow">
-                        {sortConfig.key === "status_name"
-                          ? sortConfig.direction === "asc"
-                            ? "▲"
-                            : "▼"
-                          : ""}
-                      </span>
-                    </th>
+            {/* Asset View */}
+            {activeTab === "asset" && (
+              <div className="view-section">
+                {/* Search Bar */}
+                <div className="Search-bar">
+                  <input
+                    type="text"
+                    placeholder="Search by asset code, serial number, type, user, or team"
+                    value={assetSearch}
+                    onChange={(e) => setAssetSearch(e.target.value)}
+                  />
+                  <SearchIcon className="Search-icon" />
+                </div>
 
-                    <th onClick={() => handleSort("created_at")}>
-                      CREATED
-                      <span className="sort-arrow">
-                        {sortConfig.key === "created_at"
-                          ? sortConfig.direction === "asc"
-                            ? "▲"
-                            : "▼"
-                          : ""}
-                      </span>
-                    </th>
+                {/* Filters */}
+                <div className="Assets-overview-header">
+                  <select
+                    className="filters Filter-dropdown"
+                    value={assetType}
+                    onChange={(e) => handleAssetTypeChange(e.target.value)}
+                  >
+                    {assetTypes.map((type, index) => (
+                      <option key={index} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
 
-                    <th>ACTIONS</th>
-                  </tr>
-                </thead>
+                  <select
+                    className="filters Filter-dropdown"
+                    value={assetTeam}
+                    onChange={(e) => handleAssetTeamChange(e.target.value)}
+                  >
+                    {teams.map((team, index) => (
+                      <option key={index} value={team}>
+                        {team}
+                      </option>
+                    ))}
+                  </select>
 
-                <tbody>
-                  {sortedFilteredAssets.length > 0 ? (
-                    sortedFilteredAssets.map((asset) => (
-                      <tr key={asset.asset_id}>
-                        <td>
-                          <input
-                            type="checkbox"
-                            checked={selectedAssets.has(asset.asset_id)}
-                            onChange={() => handleSelectAsset(asset.asset_id)}
-                          />
-                        </td>
+                  <div className="Header-spacer"></div>
+                </div>
 
-                        <td className="cell-device-id">{asset.asset_code}</td>
-
-                        <td>{asset.asset_name}</td>
-
-                        <td>{asset.asset_type_name}</td>
-
-                        <td>{asset.serial_number || "—"}</td>
-
-                        <td>
-                          <div className="status-container">
-                            <span
-                              className="status-dot"
-                              style={{
-                                backgroundColor: getStatusColor(
-                                  asset.status_name,
-                                ),
-                              }}
-                            />
-
-                            {asset.status_name}
-                          </div>
-                        </td>
-
-                        <td>{formatDateTime(asset.created_at)}</td>
-
-                        <td className="actions-cell">
-                          <button
-                            className="action-btn edit-btn"
-                            onClick={() => handleEditAsset(asset)}
-                            title="Edit asset"
-                          >
-                            <EditIcon
-                              style={{
-                                fontSize: "16px",
-                              }}
-                            />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td
-                        colSpan="8"
-                        style={{
-                          textAlign: "center",
-                          padding: "20px",
-                        }}
-                      >
-                        No assets found
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                {/* DataGrid */}
+                <div className="datagrid-wrapper">
+                  <DataGrid
+                    rows={assetRows}
+                    columns={assetViewColumns}
+                    checkboxSelection
+                    disableMultipleRowSelection={false}
+                    pageSizeOptions={[10, 25, 50]}
+                    paginationModel={assetPaginationModel}
+                    onPaginationModelChange={setAssetPaginationModel}
+                    disableSelectionOnClick
+                    showToolbar
+                    sx={{
+                      border: "1px solid #dde3ea",
+                      "& .MuiDataGrid-cell": {
+                        overflow: "visible",
+                        padding: "8px 16px",
+                      },
+                    }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

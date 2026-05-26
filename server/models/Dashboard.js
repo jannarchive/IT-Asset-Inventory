@@ -26,7 +26,7 @@ class Dashboard {
         JOIN asset_type at ON a.asset_type_id = at.asset_type_id
         WHERE wa.device_id = fw.device_id
           AND wa.removed_at IS NULL
-          AND at.asset_type_name IN ('CPU', 'Monitor', 'Keyboard', 'Headset', 'Camera', 'Mouse')
+          AND at.asset_type_name IN ('CPU', 'Monitor', 'Keyboard', 'Headset', 'Webcam', 'Mouse')
         GROUP BY wa.device_id
         HAVING COUNT(DISTINCT at.asset_type_name) = 6
       )
