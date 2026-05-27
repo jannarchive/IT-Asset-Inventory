@@ -16,4 +16,8 @@ router.get("/asset-types", authenticateToken, DashboardController.getAssetTypesC
 // Returns the most recent activity log entries.
 router.get("/recent-activities", authenticateToken, DashboardController.getRecentActivities);
 
+// GET /api/dashboard/workstations
+// Returns all workstations with complete device and assignment information.
+router.get("/workstations", authenticateToken, DashboardController.getAllWorkstations);
+
 export default router;

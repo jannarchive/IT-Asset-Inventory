@@ -89,6 +89,233 @@ class Dashboard {
     const result = await pool.query(query, [limit]);
     return result.rows;
   }
+
+  /**
+   * Retrieves all workstations with complete device and assignment information.
+   * Joins with device category, employee, team, status, and asset information.
+   */
+  static async getAllWorkstations() {
+    const query = `
+      SELECT
+        fw.device_id,
+        fw.device_name,
+        fw.model,
+        fw.supplier,
+        fw.notes,
+        fw.accountability_form,
+        fw.date_assigned,
+        fw.updated_at AS last_updated,
+        dc.device_category_name AS device_category,
+        s.status_name AS device_status,
+        ws.warranty_status_name AS warranty_status,
+        e.employee_name AS assigned_user,
+        e.employee_number,
+        t.team_name AS team,
+        l.location_name AS location,
+        -- Processor info
+        (SELECT asset_code FROM assets WHERE asset_id IN (
+          SELECT asset_id FROM workstation_assets 
+          WHERE device_id = fw.device_id AND asset_id IN (
+            SELECT asset_id FROM assets WHERE asset_type_id IN (
+              SELECT asset_type_id FROM asset_type WHERE asset_type_name = 'CPU'
+            )
+          ) AND removed_at IS NULL
+        ) LIMIT 1) AS processor_code,
+        (SELECT serial_number FROM assets WHERE asset_id IN (
+          SELECT asset_id FROM workstation_assets 
+          WHERE device_id = fw.device_id AND asset_id IN (
+            SELECT asset_id FROM assets WHERE asset_type_id IN (
+              SELECT asset_type_id FROM asset_type WHERE asset_type_name = 'CPU'
+            )
+          ) AND removed_at IS NULL
+        ) LIMIT 1) AS processor_serial,
+        (SELECT asset_name FROM assets WHERE asset_id IN (
+          SELECT asset_id FROM workstation_assets 
+          WHERE device_id = fw.device_id AND asset_id IN (
+            SELECT asset_id FROM assets WHERE asset_type_id IN (
+              SELECT asset_type_id FROM asset_type WHERE asset_type_name = 'CPU'
+            )
+          ) AND removed_at IS NULL
+        ) LIMIT 1) AS processor,
+        'CPU' AS processor_name,
+        -- Memory/Storage placeholder
+        '' AS memory,
+        '' AS motherboard,
+        '' AS storage,
+        -- Monitor 1
+        (SELECT asset_code FROM assets WHERE asset_id IN (
+          SELECT asset_id FROM workstation_assets 
+          WHERE device_id = fw.device_id AND asset_id IN (
+            SELECT asset_id FROM assets WHERE asset_type_id IN (
+              SELECT asset_type_id FROM asset_type WHERE asset_type_name = 'Monitor'
+            )
+          ) AND removed_at IS NULL LIMIT 1
+        ) LIMIT 1) AS monitor1_code,
+        (SELECT serial_number FROM assets WHERE asset_id IN (
+          SELECT asset_id FROM workstation_assets 
+          WHERE device_id = fw.device_id AND asset_id IN (
+            SELECT asset_id FROM assets WHERE asset_type_id IN (
+              SELECT asset_type_id FROM asset_type WHERE asset_type_name = 'Monitor'
+            )
+          ) AND removed_at IS NULL LIMIT 1
+        ) LIMIT 1) AS monitor1_serial,
+        (SELECT asset_name FROM assets WHERE asset_id IN (
+          SELECT asset_id FROM workstation_assets 
+          WHERE device_id = fw.device_id AND asset_id IN (
+            SELECT asset_id FROM assets WHERE asset_type_id IN (
+              SELECT asset_type_id FROM asset_type WHERE asset_type_name = 'Monitor'
+            )
+          ) AND removed_at IS NULL LIMIT 1
+        ) LIMIT 1) AS monitor1,
+        'Active' AS monitor1_status,
+        -- Monitor 2 (2nd monitor if exists)
+        (SELECT asset_code FROM assets WHERE asset_id IN (
+          SELECT asset_id FROM workstation_assets 
+          WHERE device_id = fw.device_id AND asset_id IN (
+            SELECT asset_id FROM assets WHERE asset_type_id IN (
+              SELECT asset_type_id FROM asset_type WHERE asset_type_name = 'Monitor'
+            )
+          ) AND removed_at IS NULL OFFSET 1 LIMIT 1
+        ) LIMIT 1) AS monitor2_code,
+        (SELECT serial_number FROM assets WHERE asset_id IN (
+          SELECT asset_id FROM workstation_assets 
+          WHERE device_id = fw.device_id AND asset_id IN (
+            SELECT asset_id FROM assets WHERE asset_type_id IN (
+              SELECT asset_type_id FROM asset_type WHERE asset_type_name = 'Monitor'
+            )
+          ) AND removed_at IS NULL OFFSET 1 LIMIT 1
+        ) LIMIT 1) AS monitor2_serial,
+        (SELECT asset_name FROM assets WHERE asset_id IN (
+          SELECT asset_id FROM workstation_assets 
+          WHERE device_id = fw.device_id AND asset_id IN (
+            SELECT asset_id FROM assets WHERE asset_type_id IN (
+              SELECT asset_type_id FROM asset_type WHERE asset_type_name = 'Monitor'
+            )
+          ) AND removed_at IS NULL OFFSET 1 LIMIT 1
+        ) LIMIT 1) AS monitor2,
+        'Active' AS monitor2_status,
+        -- Keyboard
+        (SELECT asset_code FROM assets WHERE asset_id IN (
+          SELECT asset_id FROM workstation_assets 
+          WHERE device_id = fw.device_id AND asset_id IN (
+            SELECT asset_id FROM assets WHERE asset_type_id IN (
+              SELECT asset_type_id FROM asset_type WHERE asset_type_name = 'Keyboard'
+            )
+          ) AND removed_at IS NULL
+        ) LIMIT 1) AS keyboard_code,
+        (SELECT serial_number FROM assets WHERE asset_id IN (
+          SELECT asset_id FROM workstation_assets 
+          WHERE device_id = fw.device_id AND asset_id IN (
+            SELECT asset_id FROM assets WHERE asset_type_id IN (
+              SELECT asset_type_id FROM asset_type WHERE asset_type_name = 'Keyboard'
+            )
+          ) AND removed_at IS NULL
+        ) LIMIT 1) AS keyboard_serial,
+        (SELECT asset_name FROM assets WHERE asset_id IN (
+          SELECT asset_id FROM workstation_assets 
+          WHERE device_id = fw.device_id AND asset_id IN (
+            SELECT asset_id FROM assets WHERE asset_type_id IN (
+              SELECT asset_type_id FROM asset_type WHERE asset_type_name = 'Keyboard'
+            )
+          ) AND removed_at IS NULL
+        ) LIMIT 1) AS keyboard,
+        'Active' AS keyboard_status,
+        -- Mouse
+        (SELECT asset_code FROM assets WHERE asset_id IN (
+          SELECT asset_id FROM workstation_assets 
+          WHERE device_id = fw.device_id AND asset_id IN (
+            SELECT asset_id FROM assets WHERE asset_type_id IN (
+              SELECT asset_type_id FROM asset_type WHERE asset_type_name = 'Mouse'
+            )
+          ) AND removed_at IS NULL
+        ) LIMIT 1) AS mouse_code,
+        (SELECT serial_number FROM assets WHERE asset_id IN (
+          SELECT asset_id FROM workstation_assets 
+          WHERE device_id = fw.device_id AND asset_id IN (
+            SELECT asset_id FROM assets WHERE asset_type_id IN (
+              SELECT asset_type_id FROM asset_type WHERE asset_type_name = 'Mouse'
+            )
+          ) AND removed_at IS NULL
+        ) LIMIT 1) AS mouse_serial,
+        (SELECT asset_name FROM assets WHERE asset_id IN (
+          SELECT asset_id FROM workstation_assets 
+          WHERE device_id = fw.device_id AND asset_id IN (
+            SELECT asset_id FROM assets WHERE asset_type_id IN (
+              SELECT asset_type_id FROM asset_type WHERE asset_type_name = 'Mouse'
+            )
+          ) AND removed_at IS NULL
+        ) LIMIT 1) AS mouse,
+        'Active' AS mouse_status,
+        -- Headset
+        (SELECT asset_code FROM assets WHERE asset_id IN (
+          SELECT asset_id FROM workstation_assets 
+          WHERE device_id = fw.device_id AND asset_id IN (
+            SELECT asset_id FROM assets WHERE asset_type_id IN (
+              SELECT asset_type_id FROM asset_type WHERE asset_type_name = 'Headset'
+            )
+          ) AND removed_at IS NULL
+        ) LIMIT 1) AS headset_code,
+        (SELECT serial_number FROM assets WHERE asset_id IN (
+          SELECT asset_id FROM workstation_assets 
+          WHERE device_id = fw.device_id AND asset_id IN (
+            SELECT asset_id FROM assets WHERE asset_type_id IN (
+              SELECT asset_type_id FROM asset_type WHERE asset_type_name = 'Headset'
+            )
+          ) AND removed_at IS NULL
+        ) LIMIT 1) AS headset_serial,
+        (SELECT asset_name FROM assets WHERE asset_id IN (
+          SELECT asset_id FROM workstation_assets 
+          WHERE device_id = fw.device_id AND asset_id IN (
+            SELECT asset_id FROM assets WHERE asset_type_id IN (
+              SELECT asset_type_id FROM asset_type WHERE asset_type_name = 'Headset'
+            )
+          ) AND removed_at IS NULL
+        ) LIMIT 1) AS headset,
+        'Active' AS headset_status,
+        -- Webcam
+        (SELECT asset_code FROM assets WHERE asset_id IN (
+          SELECT asset_id FROM workstation_assets 
+          WHERE device_id = fw.device_id AND asset_id IN (
+            SELECT asset_id FROM assets WHERE asset_type_id IN (
+              SELECT asset_type_id FROM asset_type WHERE asset_type_name = 'Webcam'
+            )
+          ) AND removed_at IS NULL
+        ) LIMIT 1) AS webcam_code,
+        (SELECT serial_number FROM assets WHERE asset_id IN (
+          SELECT asset_id FROM workstation_assets 
+          WHERE device_id = fw.device_id AND asset_id IN (
+            SELECT asset_id FROM assets WHERE asset_type_id IN (
+              SELECT asset_type_id FROM asset_type WHERE asset_type_name = 'Webcam'
+            )
+          ) AND removed_at IS NULL
+        ) LIMIT 1) AS webcam_serial,
+        (SELECT asset_name FROM assets WHERE asset_id IN (
+          SELECT asset_id FROM workstation_assets 
+          WHERE device_id = fw.device_id AND asset_id IN (
+            SELECT asset_id FROM assets WHERE asset_type_id IN (
+              SELECT asset_type_id FROM asset_type WHERE asset_type_name = 'Webcam'
+            )
+          ) AND removed_at IS NULL
+        ) LIMIT 1) AS webcam,
+        'Active' AS webcam_status
+      FROM full_workstation fw
+      LEFT JOIN device_category dc ON fw.device_category_id = dc.device_category_id
+      LEFT JOIN employees e ON fw.employee_id = e.employee_id
+      LEFT JOIN teams t ON e.team_id = t.team_id
+      LEFT JOIN locations l ON e.location_id = l.location_id
+      LEFT JOIN status s ON fw.status_id = s.status_id
+      LEFT JOIN warranty_status ws ON fw.warranty_status_id = ws.warranty_status_id
+      ORDER BY fw.created_at DESC
+    `;
+
+    try {
+      const result = await pool.query(query);
+      return result.rows;
+    } catch (error) {
+      console.error("Database error:", error);
+      throw error;
+    }
+  }
 }
 
 export default Dashboard;

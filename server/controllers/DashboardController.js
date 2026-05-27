@@ -61,6 +61,23 @@ class DashboardController {
       });
     }
   }
+
+  /**
+   * GET /api/dashboard/workstations
+   * Returns all workstations with complete device and assignment information.
+   */
+  static async getAllWorkstations(req, res) {
+    try {
+      const data = await Dashboard.getAllWorkstations();
+      res.status(200).json({ success: true, workstations: data });
+    } catch (error) {
+      console.error("[DashboardController] getAllWorkstations:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to fetch workstations.",
+      });
+    }
+  }
 }
 
 export default DashboardController;
