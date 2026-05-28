@@ -1,5 +1,5 @@
-export const getUserStatusColor = (warrantyStatus) => {
-    switch (warrantyStatus) {
+export const getUserStatusColor = (userStatus) => {
+    switch (userStatus) {
         case "Active": return "#00C875";
         case "Disabled": return "#DF2F4A";
     }

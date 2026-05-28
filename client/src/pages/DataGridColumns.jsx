@@ -10,9 +10,10 @@
  * Full Workstation View Column Definitions
  * 
  * @param {Function} getStatusColor - Function to get color for status values
+ * @param {Function} getWarrantyStatusColor
  * @returns {Array} Array of column definition objects for DataGrid
  */
-export const getFullWorkstationColumns = (getStatusColor) => [
+export const getFullWorkstationColumns = (getStatusColor, getWarrantyStatusColor) => [
     { field: "device_id", headerName: "Device ID", width: 120, filterable: true },
     { field: "device_category", headerName: "Device Category", width: 180, filterable: true },
     { field: "device_name", headerName: "Device Name", width: 200, filterable: true },
@@ -45,6 +46,24 @@ export const getFullWorkstationColumns = (getStatusColor) => [
             </div>
         ),
     },
+        {
+        field: "warranty_status",
+        headerName: "Warranty Status",
+        width: 140,
+        filterable: true,
+        renderCell: (params) => (
+            <div className="status-container">
+                <span
+                    className="status-dot"
+                    style={{
+                        backgroundColor: getWarrantyStatusColor(params.value),
+                    }}
+                />
+                {params.value}
+            </div>
+        ),
+    },
+    { field: "warranty_expiry_date", headerName: "Warranty Expiry Date", width: 210, filterable: true },
     { field: "processor_code", headerName: "Processor Code", width: 150, filterable: true },
     { field: "processor_serial", headerName: "Processor Serial", width: 150, filterable: true },
     { field: "processor", headerName: "Processor", width: 200, filterable: true },
@@ -173,6 +192,7 @@ export const getFullWorkstationColumns = (getStatusColor) => [
     },
     { field: "supplier", headerName: "Supplier", width: 150, filterable: true },
     { field: "notes", headerName: "Notes", width: 300, filterable: true },
+    { field: "created_at", headerName: "Created at", width: 210, filterable: true },
     { field: "last_updated", headerName: "Last Updated", width: 210, filterable: true },
 ];
 

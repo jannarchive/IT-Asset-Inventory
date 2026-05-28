@@ -6,6 +6,7 @@ import pool from "./config/Database.js";
 import authRoutes from "./routes/AuthRoutes.js";
 import assetRoutes from "./routes/AssetRoutes.js";
 import dashboardRoutes from "./routes/DashboardRoutes.js";
+import workstationRoutes from "./routes/WorkstationRoutes.js";
 
 dotenv.config();
 
@@ -45,6 +46,7 @@ app.get("/api/health", async (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/assets", assetRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/workstations", workstationRoutes);
 
 // 404 Handler
 app.use((req, res) => {

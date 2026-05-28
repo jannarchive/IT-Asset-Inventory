@@ -25,8 +25,15 @@ import DeleteIcon from "@mui/icons-material/Delete";
 
 import NavigationBar from "../components/NavigationBar.jsx";
 import Sidebar from "../components/Sidebar.jsx";
-import { getStatusColor } from "../utils/StatusUtil.jsx";
-import { getFullWorkstationColumns, getAssetViewColumns } from "./DataGridColumns.jsx";
+import {
+  getStatusColor,
+  getWarrantyStatusColor,
+} from "../utils/StatusUtil.jsx";
+import { formatDate, formatDateTime } from "../utils/DateUtil.jsx";
+import {
+  getFullWorkstationColumns,
+  getAssetViewColumns,
+} from "./DataGridColumns.jsx";
 import api from "../api.js";
 import "../styles/AdminAssetsOverview.css";
 
@@ -37,13 +44,29 @@ import "../styles/AdminAssetsOverview.css";
 // render) causes it to never appear. Props are passed via slotProps.toolbar.
 // ---------------------------------------------------------------------------
 
-function CustomToolbar({ selectedIds = [], rows = [], activeTab, onAdd, onEdit, onDelete }) {
+function CustomToolbar({
+  selectedIds = [],
+  rows = [],
+  activeTab,
+  onAdd,
+  onEdit,
+  onDelete,
+}) {
   const isWorkstation = activeTab === "workstation";
 
   return (
-    <GridToolbarContainer sx={{ justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+    <GridToolbarContainer
+      sx={{ justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}
+    >
       {/* Left: standard MUI toolbar buttons + action buttons */}
-      <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.5 }}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 0.5,
+        }}
+      >
         <GridToolbarColumnsButton />
         <GridToolbarFilterButton />
         <GridToolbarDensitySelector />
@@ -104,19 +127,36 @@ function AdminAssetsOverview() {
 
   // Full Workstation View state
   const [workstationRows, setWorkstationRows] = useState([]);
-  const [workstationPaginationModel, setWorkstationPaginationModel] = useState({ pageSize: 10, page: 0 });
-  const [workstationSelectionModel, setWorkstationSelectionModel] = useState({ type: "include", ids: new Set() });
+  const [workstationPaginationModel, setWorkstationPaginationModel] = useState({
+    pageSize: 10,
+    page: 0,
+  });
+  const [workstationSelectionModel, setWorkstationSelectionModel] = useState({
+    type: "include",
+    ids: new Set(),
+  });
 
   // Asset View state
   const [assetRows, setAssetRows] = useState([]);
-  const [assetPaginationModel, setAssetPaginationModel] = useState({ pageSize: 10, page: 0 });
-  const [assetSelectionModel, setAssetSelectionModel] = useState({ type: "include", ids: new Set() });
+  const [assetPaginationModel, setAssetPaginationModel] = useState({
+    pageSize: 10,
+    page: 0,
+  });
+  const [assetSelectionModel, setAssetSelectionModel] = useState({
+    type: "include",
+    ids: new Set(),
+  });
 
-  // Dialog state
-  const [dialogState, setDialogState] = useState({
+  // Dialog state for editing workstations and assets
+  const [workstationDialogState, setWorkstationDialogState] = useState({
     open: false,
-    mode: "add", // "add" or "edit"
-    type: "asset", // "workstation" or "asset"
+    mode: "edit", // "edit" or "view"
+    data: null,
+  });
+
+  const [assetDialogState, setAssetDialogState] = useState({
+    open: false,
+    mode: "edit", // "edit" or "view"
     data: null,
   });
 
@@ -143,9 +183,17 @@ function AdminAssetsOverview() {
           employee_number: ws.employee_number,
           team: ws.team,
           location: ws.location,
-          date_assigned: ws.date_assigned,
+
+          date_assigned: ws.date_assigned ? formatDate(ws.date_assigned) : "",
+
           accountability_form: ws.accountability_form,
           device_status: ws.device_status,
+          warranty_status: ws.warranty_status,
+
+          warranty_expiry_date: ws.warranty_expiry_date
+            ? formatDate(ws.warranty_expiry_date)
+            : "",
+
           processor_code: ws.processor_code,
           processor_serial: ws.processor_serial,
           processor: ws.processor,
@@ -178,7 +226,10 @@ function AdminAssetsOverview() {
           webcam_status: ws.webcam_status,
           supplier: ws.supplier,
           notes: ws.notes,
-          last_updated: ws.last_updated,
+
+          created_at: ws.created_at ? formatDateTime(ws.created_at) : "",
+
+          last_updated: ws.last_updated ? formatDateTime(ws.last_updated) : "",
         }));
         setWorkstationRows(transformedRows);
         setError("");
@@ -248,90 +299,117 @@ function AdminAssetsOverview() {
     }
   }, [activeTab, fetchWorkstations, fetchAssets]);
 
-  /*
   // ---------------------------------------------------------------------------
-  // Dialog Handlers
+  // Dialog Handlers for Workstations
   // ---------------------------------------------------------------------------
 
-  const handleOpenDialog = (mode, type, rowData = null) => {
-    setDialogState({
+  const handleOpenWorkstationDialog = (mode, rowData = null) => {
+    setWorkstationDialogState({
       open: true,
       mode,
-      type,
       data: rowData || {},
     });
   };
 
-  const handleCloseDialog = () => {
-    setDialogState({
+  const handleCloseWorkstationDialog = () => {
+    setWorkstationDialogState({
       open: false,
-      mode: "add",
-      type: "asset",
+      mode: "edit",
       data: null,
     });
   };
 
-  const handleSaveRecord = async () => {
+  const handleSaveWorkstation = async (updatedData) => {
     try {
-      if (dialogState.mode === "add") {
-        // Handle add record
-        if (dialogState.type === "asset") {
-          await api.post("/api/assets", dialogState.data);
-        } else {
-          // Workstation add - implement as needed
-          console.log("Add workstation:", dialogState.data);
-        }
-      } else {
-        // Handle edit record
-        if (dialogState.type === "asset") {
-          await api.put(
-            `/api/assets/${dialogState.data.asset_id}`,
-            dialogState.data
-          );
-        } else {
-          // Workstation edit - implement as needed
-          console.log("Edit workstation:", dialogState.data);
-        }
+      if (
+        workstationDialogState.data &&
+        workstationDialogState.data.device_id
+      ) {
+        // Update workstation
+        await api.put(
+          `/api/workstations/${workstationDialogState.data.device_id}`,
+          updatedData,
+        );
       }
-      handleCloseDialog();
-      if (dialogState.type === "asset") {
-        fetchAssets();
-      } else {
-        fetchWorkstations();
-      }
+      handleCloseWorkstationDialog();
+      fetchWorkstations();
     } catch (err) {
-      console.error("Error saving record:", err);
-      setError("Failed to save record");
+      console.error("Error saving workstation:", err);
+      setError("Failed to save workstation");
     }
   };
 
-  const handleDeleteRecords = async (ids) => {
+  const handleDeleteWorkstations = async (ids) => {
     if (
       window.confirm(
-        `Are you sure you want to delete ${ids.length} record(s)?`
+        `Are you sure you want to delete ${ids.length} workstation(s)?`,
       )
     ) {
       try {
         for (const id of ids) {
-          if (activeTab === "asset") {
-            await api.delete(`/api/assets/${id}`);
-          } else {
-            // Workstation delete - implement as needed
-            console.log("Delete workstation:", id);
-          }
+          await api.delete(`/api/workstations/${id}`);
         }
-        if (activeTab === "asset") {
-          fetchAssets();
-        } else {
-          fetchWorkstations();
-        }
+        fetchWorkstations();
         setError("");
       } catch (err) {
-        console.error("Error deleting records:", err);
-        setError("Failed to delete record(s)");
+        console.error("Error deleting workstations:", err);
+        setError("Failed to delete workstation(s)");
       }
     }
-  };*/
+  };
+
+  // ---------------------------------------------------------------------------
+  // Dialog Handlers for Assets
+  // ---------------------------------------------------------------------------
+
+  const handleOpenAssetDialog = (mode, rowData = null) => {
+    setAssetDialogState({
+      open: true,
+      mode,
+      data: rowData || {},
+    });
+  };
+
+  const handleCloseAssetDialog = () => {
+    setAssetDialogState({
+      open: false,
+      mode: "edit",
+      data: null,
+    });
+  };
+
+  const handleSaveAsset = async (updatedData) => {
+    try {
+      if (assetDialogState.data && assetDialogState.data.asset_id) {
+        await api.put(
+          `/api/assets/${assetDialogState.data.asset_id}`,
+          updatedData,
+        );
+      }
+      handleCloseAssetDialog();
+      fetchAssets();
+    } catch (err) {
+      console.error("Error saving asset:", err);
+      setError("Failed to save asset");
+    }
+  };
+
+  const handleDeleteAssets = async (ids) => {
+    if (
+      window.confirm(`Are you sure you want to delete ${ids.length} asset(s)?`)
+    ) {
+      try {
+        for (const id of ids) {
+          await api.delete(`/api/assets/${id}`);
+        }
+        fetchAssets();
+        setError("");
+      } catch (err) {
+        console.error("Error deleting assets:", err);
+        setError("Failed to delete asset(s)");
+      }
+    }
+  };
 
   // ---------------------------------------------------------------------------
   // Toolbar prop callbacks (stable references so slotProps don't thrash)
@@ -342,28 +420,45 @@ function AdminAssetsOverview() {
     navigate("/admin/assets/new");
   }, [navigate]);
 
-  // Edit → navigate to Edit page, passing the selected row as route state
-  const handleToolbarEdit = useCallback((row) => {
-    navigate(`/admin/assets/edit/${row.device_id}`, { state: { record: row } });
-  }, [navigate]);
+  // Edit → open dialog for editing
+  const handleToolbarEdit = useCallback(
+    (row) => {
+      if (activeTab === "workstation") {
+        handleOpenWorkstationDialog("edit", row);
+      } else {
+        handleOpenAssetDialog("edit", row);
+      }
+    },
+    [activeTab],
+  );
 
   const handleRowDoubleClick = (params) => {
     if (activeTab === "workstation") {
-      navigate(`/admin/assets/edit/${params.row.device_id}`, { state: { record: params.row } });
+      handleOpenWorkstationDialog("edit", params.row);
     } else {
-      handleOpenDialog("edit", activeTab, params.row);
+      handleOpenAssetDialog("edit", params.row);
     }
   };
 
-  const handleToolbarDelete = useCallback((ids) => {
-    handleDeleteRecords(ids);
-  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
+  const handleToolbarDelete = useCallback(
+    (ids) => {
+      if (activeTab === "workstation") {
+        handleDeleteWorkstations(ids);
+      } else {
+        handleDeleteAssets(ids);
+      }
+    },
+    [activeTab],
+  );
 
   // ---------------------------------------------------------------------------
   // Column Definitions
   // ---------------------------------------------------------------------------
 
-  const fullWorkstationColumns = getFullWorkstationColumns(getStatusColor);
+  const fullWorkstationColumns = getFullWorkstationColumns(
+    getStatusColor,
+    getWarrantyStatusColor,
+  );
   const assetViewColumns = getAssetViewColumns(getStatusColor);
 
   // ---------------------------------------------------------------------------
@@ -391,13 +486,20 @@ function AdminAssetsOverview() {
               <button
                 className={`Assets-tab ${activeTab === "workstation" ? "Assets-tab--active" : ""}`}
                 onClick={() => setActiveTab("workstation")}
-              > Full Workstation View </button>
+              >
+                {" "}
+                Full Workstation View{" "}
+              </button>
 
               <button
-                className={`Assets-tab ${activeTab === "asset" ? "Assets-tab--active" : ""
-                  }`}
+                className={`Assets-tab ${
+                  activeTab === "asset" ? "Assets-tab--active" : ""
+                }`}
                 onClick={() => setActiveTab("asset")}
-              > Asset View </button>
+              >
+                {" "}
+                Asset View{" "}
+              </button>
             </div>
 
             {/* Error Message */}
@@ -488,6 +590,184 @@ function AdminAssetsOverview() {
           </div>
         </div>
       </div>
+
+      {/* Workstation Edit Dialog */}
+      {workstationDialogState.open && (
+        <Dialog
+          open={workstationDialogState.open}
+          onClose={handleCloseWorkstationDialog}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>
+            {workstationDialogState.mode === "edit"
+              ? "Edit Workstation"
+              : "View Workstation"}
+          </DialogTitle>
+          <DialogContent sx={{ pt: 2 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <TextField
+                label="Device ID"
+                value={workstationDialogState.data?.device_id || ""}
+                disabled
+                fullWidth
+              />
+              <TextField
+                label="Device Name"
+                value={workstationDialogState.data?.device_name || ""}
+                onChange={(e) =>
+                  setWorkstationDialogState((prev) => ({
+                    ...prev,
+                    data: {
+                      ...prev.data,
+                      device_name: e.target.value,
+                    },
+                  }))
+                }
+                fullWidth
+              />
+              <TextField
+                label="Device Status"
+                value={workstationDialogState.data?.device_status || ""}
+                onChange={(e) =>
+                  setWorkstationDialogState((prev) => ({
+                    ...prev,
+                    data: {
+                      ...prev.data,
+                      device_status: e.target.value,
+                    },
+                  }))
+                }
+                fullWidth
+              />
+              <TextField
+                label="Assigned User"
+                value={workstationDialogState.data?.assigned_user || ""}
+                onChange={(e) =>
+                  setWorkstationDialogState((prev) => ({
+                    ...prev,
+                    data: {
+                      ...prev.data,
+                      assigned_user: e.target.value,
+                    },
+                  }))
+                }
+                fullWidth
+              />
+              <TextField
+                label="Team"
+                value={workstationDialogState.data?.team || ""}
+                onChange={(e) =>
+                  setWorkstationDialogState((prev) => ({
+                    ...prev,
+                    data: {
+                      ...prev.data,
+                      team: e.target.value,
+                    },
+                  }))
+                }
+                fullWidth
+              />
+              <TextField
+                label="Location"
+                value={workstationDialogState.data?.location || ""}
+                onChange={(e) =>
+                  setWorkstationDialogState((prev) => ({
+                    ...prev,
+                    data: {
+                      ...prev.data,
+                      location: e.target.value,
+                    },
+                  }))
+                }
+                fullWidth
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseWorkstationDialog}>Cancel</Button>
+            <Button
+              onClick={() => handleSaveWorkstation(workstationDialogState.data)}
+              variant="contained"
+              color="primary"
+            >
+              Save
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
+
+      {/* Asset Edit Dialog */}
+      {assetDialogState.open && (
+        <Dialog
+          open={assetDialogState.open}
+          onClose={handleCloseAssetDialog}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>
+            {assetDialogState.mode === "edit" ? "Edit Asset" : "View Asset"}
+          </DialogTitle>
+          <DialogContent sx={{ pt: 2 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <TextField
+                label="Asset ID"
+                value={assetDialogState.data?.asset_id || ""}
+                disabled
+                fullWidth
+              />
+              <TextField
+                label="Asset Name"
+                value={assetDialogState.data?.asset_name || ""}
+                onChange={(e) =>
+                  setAssetDialogState((prev) => ({
+                    ...prev,
+                    data: {
+                      ...prev.data,
+                      asset_name: e.target.value,
+                    },
+                  }))
+                }
+                fullWidth
+              />
+              <TextField
+                label="Asset Code"
+                value={assetDialogState.data?.asset_code || ""}
+                disabled
+                fullWidth
+              />
+              <TextField
+                label="Serial Number"
+                value={assetDialogState.data?.serial_number || ""}
+                disabled
+                fullWidth
+              />
+              <TextField
+                label="Status"
+                value={assetDialogState.data?.status_name || ""}
+                disabled
+                fullWidth
+              />
+              <TextField
+                label="Asset Type"
+                value={assetDialogState.data?.asset_type_name || ""}
+                disabled
+                fullWidth
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseAssetDialog}>Cancel</Button>
+            <Button
+              onClick={() => handleSaveAsset(assetDialogState.data)}
+              variant="contained"
+              color="primary"
+            >
+              Save
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
     </div>
   );
 }
