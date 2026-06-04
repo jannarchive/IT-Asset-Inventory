@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import MonitorRoundedIcon from "@mui/icons-material/MonitorRounded";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import InStorageRoundedIcon from '@mui/icons-material/WarehouseRounded';
 import RemoveFromQueueRoundedIcon from "@mui/icons-material/RemoveFromQueueRounded";
 
 import NavigationBar from "../components/NavigationBar.jsx";
@@ -28,6 +29,12 @@ const STATUS_CONFIG = [
     label: "Active Assets",
     icon: <CheckRoundedIcon />,
     color: "#2ecc71",
+  },
+    {
+    key: "inStorageAssets",
+    label: "In Storage Assets",
+    icon: <InStorageRoundedIcon />,
+    color: "#fff93d",
   },
   {
     key: "defectiveAssets",
@@ -59,6 +66,7 @@ function AdminDashboard() {
   const [stats, setStats] = useState({
     totalAssets: 0,
     activeAssets: 0,
+    instorageAssets: 0,
     defectiveAssets: 0,
     incompleteWorkstations: 0,
   });
@@ -92,13 +100,6 @@ function AdminDashboard() {
   }, []);
 
   // -- Data fetching ---------------------------------------------------------
-  /**
-   * Each endpoint has its own try/catch so a failure in one section never
-   * prevents the other two from rendering. All three requests fire in parallel.
-   *
-   * Auth token is attached automatically by the api.js interceptor —
-   * no manual header config needed here.
-   */
   useEffect(() => {
     const fetchStats = async () => {
       setLoadingStats(true);
@@ -233,7 +234,7 @@ function AdminDashboard() {
                     <tr>
                       <th>Log ID</th>
                       <th>Date of Action</th>
-                      <th>Device ID</th>
+                      <th>Entity ID (Device, Asset, Workstation Assets)</th>
                       <th>Action Type</th>
                       <th>Description</th>
                       <th>Performed By</th>

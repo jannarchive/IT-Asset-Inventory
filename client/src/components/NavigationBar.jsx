@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import Logout from '@mui/icons-material/LogoutOutlined';
@@ -8,11 +8,18 @@ import '../styles/NavigationBar.css';
 
 
 function NavigationBar() {
+    const [adminName, setAdminName] = useState('');
+    const [adminEmail, setAdminEmail] = useState('');
     const [showDropdown, setShowDropdown] = useState(false);
     
     const accountIconRef = useRef(null);
     const dropdownRef = useRef(null);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        setAdminName(localStorage.getItem('adminName') || 'Admin');
+        setAdminEmail(localStorage.getItem('adminEmail') || '');
+    }, []);
 
     const handleDropdown = () => {
         setShowDropdown(!showDropdown);
@@ -20,15 +27,18 @@ function NavigationBar() {
 
     const handleLogout = () => {
         localStorage.clear();
-        navigate('/');
+        if (
+            window.confirm("Are you sure you want to log out your account?")
+    ) {
+      navigate('/');
+    }
     };
 
     return (
-
         <header className="Header">
             <img src={logo} alt="Company Logo" className="LinkedBPO-logo" />
             <div className="Navigation-bar">
-                <p>Hi!</p>
+                <p>Hi, {adminName}!</p>
                 <AccountCircleIcon
                     className="Account-icon"
                     onClick={handleDropdown}
@@ -41,8 +51,8 @@ function NavigationBar() {
                     <div className="Dropdown-arrow"></div>
                     <div className="Dropdown-content">
                         <AccountCircleIcon className="User-icon" style={{ fontSize: 80 }} />
-                        <p className="Dropdown-email">useradmin@example.com</p>
-                        <p className="Dropdown-user-status">Active</p>
+                        <p className="Dropdown-name">{adminName}</p>
+                        <p className="Dropdown-email">{adminEmail}</p>
                         <button className="Logout-button" onClick={handleLogout}>
                             <Logout />
                             <p>Logout</p>
@@ -50,7 +60,6 @@ function NavigationBar() {
                     </div>
                 </div>
             )}
-
         </header>
     );
 }

@@ -35,7 +35,7 @@
 .Navigation-bar {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 10px;
     position: relative;
     background-color: transparent;
     padding: 0;
@@ -61,7 +61,7 @@
 
 .Navigation-bar p {
     color: var(--color-text-dark);
-    font-size: 18px;
+    font-size: clamp(10px, 2vw, 16px);
     font-weight: 500;
     font-family: var(--font-base);
 }
@@ -122,20 +122,18 @@
     display: block;
 }
 
-.Dropdown-email {
-    font-size: 16px;
+.Dropdown-name {
+    font-size: clamp(8px, 2vw, 18px);
     font-family: var(--font-base);
     font-weight: 500;
-    color: var(--color-black);
-    text-align: center;
+    color: var(--color-text-dark);
 }
 
-.Dropdown-user-status {
-    font-size: 14px;
+.Dropdown-email {
+    font-size: clamp(8px, 2vw, 13px);
     font-family: var(--font-base);
-    font-weight: 400;
-    color: var(--color-text-gray);
-    margin: 0;
+    color: #5d5656;
+    text-align: center;
 }
 
 .Logout-button {
@@ -155,7 +153,7 @@
 .Logout-button:hover {
     color: var(--color-red);
     background-color: #efabab;
-    transform: scale(1.05);
+    transform: translateY(-1px);
 }
 
 .Logout-button p{

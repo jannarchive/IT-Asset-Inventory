@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminAssetsOverview from "./pages/AdminAssetsOverview";
 import AdminAddAssetRecord from "./pages/AdminAddAssetRecord";
+import AdminReports from "./pages/AdminReports";
 
 function App() {
   const NotFound = () => <h1>404 - Not Found</h1>;
@@ -30,6 +31,11 @@ function App() {
     {
       path: "/admin/assets/new",
       element: <AdminAddAssetRecord />,
+      errorElement: <NotFound />,
+    },
+      {
+      path: "/admin/reports",
+      element: <AdminReports />,
       errorElement: <NotFound />,
     },
   ]);

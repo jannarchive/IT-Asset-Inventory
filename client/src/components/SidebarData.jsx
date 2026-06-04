@@ -19,7 +19,7 @@ export const SidebarData = ({ system_users_id, device_id }) => {
     },
     {
       title: "Reports",
-      path: `/admin/reports/${system_users_id}`,
+      path: `/admin/reports`,
       icon: <ReportsIcon style={{ fontSize: 30 }} />,
       cName: "nav-text",
     },

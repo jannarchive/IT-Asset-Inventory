@@ -2,8 +2,101 @@ import pool from "../config/Database.js";
 
 class Workstation {
   /**
-   * Get all workstations with complete details
+   * Resolve FK IDs needed for full_workstation in one round-trip batch.
+   * Returns null for any lookup that finds no matching row.
    */
+  static async #resolveForeignKeys({ device_category, device_status }) {
+    const [categoryResult, statusResult] = await Promise.all([
+      pool.query(
+        "SELECT device_category_id FROM device_category WHERE device_category_name = $1",
+        [device_category || null]
+      ),
+      pool.query(
+        "SELECT status_id FROM status WHERE status_name = $1",
+        [device_status || "Active"]
+      ),
+    ]);
+
+    return {
+      categoryId: categoryResult.rows[0]?.device_category_id ?? null,
+      statusId:   statusResult.rows[0]?.status_id             ?? null,
+    };
+  }
+
+  /**
+   * Resolve team_id from team name. Returns null if not provided or not found.
+   */
+  static async #resolveTeamId(teamName) {
+    if (!teamName) return null;
+    const result = await pool.query(
+      "SELECT team_id FROM teams WHERE team_name = $1",
+      [teamName]
+    );
+    return result.rows[0]?.team_id ?? null;
+  }
+
+  /**
+   * Resolve location_id from location name. Returns null if not provided or not found.
+   */
+  static async #resolveLocationId(locationName) {
+    if (!locationName) return null;
+    const result = await pool.query(
+      "SELECT location_id FROM locations WHERE location_name = $1",
+      [locationName]
+    );
+    return result.rows[0]?.location_id ?? null;
+  }
+
+  /**
+   * Resolve oan employee from the provided fields.
+   * Returns employee_id, or null when no identifying information is supplied.
+   */
+  static async #resolveEmployeeId({ assigned_user, employee_number, team, location }, client) {
+    if (!assigned_user && !employee_number) return null;
+
+    const db = client ?? pool;
+
+    const teamId     = await Workstation.#resolveTeamId(team);
+    const locationId = await Workstation.#resolveLocationId(location);
+
+    // 1. Try to find an existing employee
+    const findResult = await db.query(
+      `SELECT employee_id FROM employees
+       WHERE ($1::text IS NOT NULL AND employee_number = $1)
+          OR ($2::text IS NOT NULL AND employee_name   = $2)
+       LIMIT 1`,
+      [employee_number ?? null, assigned_user ?? null]
+    );
+
+    if (findResult.rows.length > 0) {
+      const employeeId = findResult.rows[0].employee_id;
+
+      // Sync team / location if the caller supplied them
+      if (teamId !== null || locationId !== null) {
+        await db.query(
+          `UPDATE employees SET
+             team_id     = COALESCE($2, team_id),
+             location_id = COALESCE($3, location_id)
+           WHERE employee_id = $1`,
+          [employeeId, teamId, locationId]
+        );
+      }
+
+      return employeeId;
+    }
+
+    // 2. Employee not found — create a minimal record so the workstation links correctly
+    const insertResult = await db.query(
+      `INSERT INTO employees (employee_name, employee_number, team_id, location_id)
+       VALUES ($1, $2, $3, $4)
+       RETURNING employee_id`,
+      [assigned_user ?? null, employee_number ?? null, teamId, locationId]
+    );
+
+    return insertResult.rows[0].employee_id;
+  }
+
+  // GET ALL WORKSTATIONS
   static async getAllWorkstations() {
     const query = `
       SELECT
@@ -11,66 +104,123 @@ class Workstation {
         fw.device_name,
         fw.model,
         fw.supplier,
+        fw.date_assigned,
         fw.notes,
         fw.accountability_form,
-        fw.date_assigned,
         fw.created_at,
-        fw.updated_at AS last_updated,
-        dc.device_category_name AS device_category,
-        s.status_name AS device_status,
-        ws.warranty_status_name AS warranty_status,
-        fw.warranty_expiry_date,
-        e.employee_name AS assigned_user,
+        fw.updated_at                         AS last_updated,
+
+        -- Resolved lookup columns
+        dc.device_category_name               AS device_category,
+        s.status_name                         AS device_status,
+
+        -- Employee / team / location
+        e.employee_name                       AS assigned_user,
         e.employee_number,
-        t.team_name AS team,
-        l.location_name AS location,
-        fw.processor_code,
-        fw.processor_serial,
-        fw.processor,
+        t.team_name                           AS team,
+        l.location_name                       AS location,
+
+        -- Hardware specs stored on the workstation
         fw.memory,
         fw.motherboard,
         fw.storage,
-        fw.monitor1_code,
-        fw.monitor1_serial,
-        fw.monitor1,
-        fw.monitor1_status,
-        fw.monitor2_code,
-        fw.monitor2_serial,
-        fw.monitor2,
-        fw.monitor2_status,
-        fw.keyboard_code,
-        fw.keyboard_serial,
-        fw.keyboard,
-        fw.keyboard_status,
-        fw.mouse_code,
-        fw.mouse_serial,
-        fw.mouse,
-        fw.mouse_status,
-        fw.headset_code,
-        fw.headset_serial,
-        fw.headset,
-        fw.headset_status,
-        fw.webcam_code,
-        fw.webcam_serial,
-        fw.webcam,
-        fw.webcam_status
+
+        -- Processor (asset_role = 'Processor')
+        MAX(CASE WHEN wa.asset_role = 'Processor' THEN a.asset_code    END) AS processor_code,
+        MAX(CASE WHEN wa.asset_role = 'Processor' THEN a.serial_number END) AS processor_serial,
+        MAX(CASE WHEN wa.asset_role = 'Processor' THEN a.asset_name    END) AS processor,
+        MAX(CASE WHEN wa.asset_role = 'Processor' THEN ps.status_name  END) AS processor_status,
+
+        -- Monitor 1
+        MAX(CASE WHEN wa.asset_role = 'Monitor 1' THEN a.asset_code    END) AS monitor1_code,
+        MAX(CASE WHEN wa.asset_role = 'Monitor 1' THEN a.serial_number END) AS monitor1_serial,
+        MAX(CASE WHEN wa.asset_role = 'Monitor 1' THEN a.asset_name    END) AS monitor1,
+        MAX(CASE WHEN wa.asset_role = 'Monitor 1' THEN ps.status_name  END) AS monitor1_status,
+
+        -- Monitor 2
+        MAX(CASE WHEN wa.asset_role = 'Monitor 2' THEN a.asset_code    END) AS monitor2_code,
+        MAX(CASE WHEN wa.asset_role = 'Monitor 2' THEN a.serial_number END) AS monitor2_serial,
+        MAX(CASE WHEN wa.asset_role = 'Monitor 2' THEN a.asset_name    END) AS monitor2,
+        MAX(CASE WHEN wa.asset_role = 'Monitor 2' THEN ps.status_name  END) AS monitor2_status,
+
+        -- Keyboard
+        MAX(CASE WHEN wa.asset_role = 'Keyboard'  THEN a.asset_code    END) AS keyboard_code,
+        MAX(CASE WHEN wa.asset_role = 'Keyboard'  THEN a.serial_number END) AS keyboard_serial,
+        MAX(CASE WHEN wa.asset_role = 'Keyboard'  THEN a.asset_name    END) AS keyboard,
+        MAX(CASE WHEN wa.asset_role = 'Keyboard'  THEN ps.status_name  END) AS keyboard_status,
+
+        -- Mouse
+        MAX(CASE WHEN wa.asset_role = 'Mouse'     THEN a.asset_code    END) AS mouse_code,
+        MAX(CASE WHEN wa.asset_role = 'Mouse'     THEN a.serial_number END) AS mouse_serial,
+        MAX(CASE WHEN wa.asset_role = 'Mouse'     THEN a.asset_name    END) AS mouse,
+        MAX(CASE WHEN wa.asset_role = 'Mouse'     THEN ps.status_name  END) AS mouse_status,
+
+        -- Headset
+        MAX(CASE WHEN wa.asset_role = 'Headset'   THEN a.asset_code    END) AS headset_code,
+        MAX(CASE WHEN wa.asset_role = 'Headset'   THEN a.serial_number END) AS headset_serial,
+        MAX(CASE WHEN wa.asset_role = 'Headset'   THEN a.asset_name    END) AS headset,
+        MAX(CASE WHEN wa.asset_role = 'Headset'   THEN ps.status_name  END) AS headset_status,
+
+        -- Webcam
+        MAX(CASE WHEN wa.asset_role = 'Webcam'    THEN a.asset_code    END) AS webcam_code,
+        MAX(CASE WHEN wa.asset_role = 'Webcam'    THEN a.serial_number END) AS webcam_serial,
+        MAX(CASE WHEN wa.asset_role = 'Webcam'    THEN a.asset_name    END) AS webcam,
+        MAX(CASE WHEN wa.asset_role = 'Webcam'    THEN ps.status_name  END) AS webcam_status
+
       FROM full_workstation fw
-      LEFT JOIN device_category dc ON fw.device_category_id = dc.device_category_id
-      LEFT JOIN status s ON fw.device_status_id = s.status_id
-      LEFT JOIN warranty_status ws ON fw.warranty_status_id = ws.warranty_status_id
-      LEFT JOIN employee e ON fw.employee_id = e.employee_id
-      LEFT JOIN team t ON fw.team_id = t.team_id
-      LEFT JOIN location l ON fw.location_id = l.location_id
-      ORDER BY fw.device_id DESC
+
+        -- Workstation-level FK lookups
+        LEFT JOIN device_category dc
+          ON fw.device_category_id = dc.device_category_id
+        LEFT JOIN status s
+          ON fw.status_id = s.status_id
+
+        -- Employee / team / location
+        LEFT JOIN employees e
+          ON fw.employee_id = e.employee_id
+        LEFT JOIN teams t
+          ON e.team_id = t.team_id
+        LEFT JOIN locations l
+          ON e.location_id = l.location_id
+
+        -- Active asset assignments only (removed_at IS NULL)
+        LEFT JOIN workstation_assets wa
+          ON fw.device_id = wa.device_id
+          AND wa.removed_at IS NULL
+        LEFT JOIN assets a
+          ON wa.asset_id = a.asset_id
+        -- Per-asset status (aliased ps to avoid collision with workstation status s)
+        LEFT JOIN status ps
+          ON a.status_id = ps.status_id
+
+      GROUP BY
+        fw.device_id,
+        fw.device_name,
+        fw.model,
+        fw.supplier,
+        fw.date_assigned,
+        fw.notes,
+        fw.accountability_form,
+        fw.created_at,
+        fw.updated_at,
+        fw.memory,
+        fw.motherboard,
+        fw.storage,
+        dc.device_category_name,
+        s.status_name,
+        e.employee_name,
+        e.employee_number,
+        t.team_name,
+        l.location_name
+
+      ORDER BY fw.device_id;
     `;
 
     const result = await pool.query(query);
     return result.rows;
   }
 
-  /**
-   * Get a single workstation by device_id
-   */
+  // GET WORKSTATION BY ID
   static async getWorkstationById(deviceId) {
     const query = `
       SELECT
@@ -78,66 +228,107 @@ class Workstation {
         fw.device_name,
         fw.model,
         fw.supplier,
+        fw.date_assigned,
         fw.notes,
         fw.accountability_form,
-        fw.date_assigned,
         fw.created_at,
-        fw.updated_at AS last_updated,
-        dc.device_category_name AS device_category,
-        s.status_name AS device_status,
-        ws.warranty_status_name AS warranty_status,
-        fw.warranty_expiry_date,
-        e.employee_name AS assigned_user,
-        e.employee_number,
-        t.team_name AS team,
-        l.location_name AS location,
-        fw.processor_code,
-        fw.processor_serial,
-        fw.processor,
+        fw.updated_at                         AS last_updated,
         fw.memory,
         fw.motherboard,
         fw.storage,
-        fw.monitor1_code,
-        fw.monitor1_serial,
-        fw.monitor1,
-        fw.monitor1_status,
-        fw.monitor2_code,
-        fw.monitor2_serial,
-        fw.monitor2,
-        fw.monitor2_status,
-        fw.keyboard_code,
-        fw.keyboard_serial,
-        fw.keyboard,
-        fw.keyboard_status,
-        fw.mouse_code,
-        fw.mouse_serial,
-        fw.mouse,
-        fw.mouse_status,
-        fw.headset_code,
-        fw.headset_serial,
-        fw.headset,
-        fw.headset_status,
-        fw.webcam_code,
-        fw.webcam_serial,
-        fw.webcam,
-        fw.webcam_status
+
+        dc.device_category_name               AS device_category,
+        s.status_name                         AS device_status,
+
+        e.employee_name                       AS assigned_user,
+        e.employee_number,
+        t.team_name                           AS team,
+        l.location_name                       AS location,
+
+        MAX(CASE WHEN wa.asset_role = 'Processor' THEN a.asset_code    END) AS processor_code,
+        MAX(CASE WHEN wa.asset_role = 'Processor' THEN a.serial_number END) AS processor_serial,
+        MAX(CASE WHEN wa.asset_role = 'Processor' THEN a.asset_name    END) AS processor,
+        MAX(CASE WHEN wa.asset_role = 'Processor' THEN ps.status_name  END) AS processor_status,
+
+        MAX(CASE WHEN wa.asset_role = 'Monitor 1' THEN a.asset_code    END) AS monitor1_code,
+        MAX(CASE WHEN wa.asset_role = 'Monitor 1' THEN a.serial_number END) AS monitor1_serial,
+        MAX(CASE WHEN wa.asset_role = 'Monitor 1' THEN a.asset_name    END) AS monitor1,
+        MAX(CASE WHEN wa.asset_role = 'Monitor 1' THEN ps.status_name  END) AS monitor1_status,
+
+        MAX(CASE WHEN wa.asset_role = 'Monitor 2' THEN a.asset_code    END) AS monitor2_code,
+        MAX(CASE WHEN wa.asset_role = 'Monitor 2' THEN a.serial_number END) AS monitor2_serial,
+        MAX(CASE WHEN wa.asset_role = 'Monitor 2' THEN a.asset_name    END) AS monitor2,
+        MAX(CASE WHEN wa.asset_role = 'Monitor 2' THEN ps.status_name  END) AS monitor2_status,
+
+        MAX(CASE WHEN wa.asset_role = 'Keyboard'  THEN a.asset_code    END) AS keyboard_code,
+        MAX(CASE WHEN wa.asset_role = 'Keyboard'  THEN a.serial_number END) AS keyboard_serial,
+        MAX(CASE WHEN wa.asset_role = 'Keyboard'  THEN a.asset_name    END) AS keyboard,
+        MAX(CASE WHEN wa.asset_role = 'Keyboard'  THEN ps.status_name  END) AS keyboard_status,
+
+        MAX(CASE WHEN wa.asset_role = 'Mouse'     THEN a.asset_code    END) AS mouse_code,
+        MAX(CASE WHEN wa.asset_role = 'Mouse'     THEN a.serial_number END) AS mouse_serial,
+        MAX(CASE WHEN wa.asset_role = 'Mouse'     THEN a.asset_name    END) AS mouse,
+        MAX(CASE WHEN wa.asset_role = 'Mouse'     THEN ps.status_name  END) AS mouse_status,
+
+        MAX(CASE WHEN wa.asset_role = 'Headset'   THEN a.asset_code    END) AS headset_code,
+        MAX(CASE WHEN wa.asset_role = 'Headset'   THEN a.serial_number END) AS headset_serial,
+        MAX(CASE WHEN wa.asset_role = 'Headset'   THEN a.asset_name    END) AS headset,
+        MAX(CASE WHEN wa.asset_role = 'Headset'   THEN ps.status_name  END) AS headset_status,
+
+        MAX(CASE WHEN wa.asset_role = 'Webcam'    THEN a.asset_code    END) AS webcam_code,
+        MAX(CASE WHEN wa.asset_role = 'Webcam'    THEN a.serial_number END) AS webcam_serial,
+        MAX(CASE WHEN wa.asset_role = 'Webcam'    THEN a.asset_name    END) AS webcam,
+        MAX(CASE WHEN wa.asset_role = 'Webcam'    THEN ps.status_name  END) AS webcam_status
+
       FROM full_workstation fw
-      LEFT JOIN device_category dc ON fw.device_category_id = dc.device_category_id
-      LEFT JOIN status s ON fw.device_status_id = s.status_id
-      LEFT JOIN warranty_status ws ON fw.warranty_status_id = ws.warranty_status_id
-      LEFT JOIN employee e ON fw.employee_id = e.employee_id
-      LEFT JOIN team t ON fw.team_id = t.team_id
-      LEFT JOIN location l ON fw.location_id = l.location_id
+        LEFT JOIN device_category dc
+          ON fw.device_category_id = dc.device_category_id
+        LEFT JOIN status s
+          ON fw.status_id = s.status_id
+        LEFT JOIN employees e
+          ON fw.employee_id = e.employee_id
+        LEFT JOIN teams t
+          ON e.team_id = t.team_id
+        LEFT JOIN locations l
+          ON e.location_id = l.location_id
+        LEFT JOIN workstation_assets wa
+          ON fw.device_id = wa.device_id
+          AND wa.removed_at IS NULL
+        LEFT JOIN assets a
+          ON wa.asset_id = a.asset_id
+        LEFT JOIN status ps
+          ON a.status_id = ps.status_id
+
       WHERE fw.device_id = $1
+
+      GROUP BY
+        fw.device_id, fw.device_name, fw.model, fw.supplier, fw.date_assigned,
+        fw.notes, fw.accountability_form, fw.created_at, fw.updated_at,
+        fw.memory, fw.motherboard, fw.storage,
+        dc.device_category_name, s.status_name,
+        e.employee_name, e.employee_number, t.team_name, l.location_name;
     `;
 
     const result = await pool.query(query, [deviceId]);
-    return result.rows[0] || null;
+    return result.rows[0] ?? null;
   }
 
-  /**
-   * Create a new workstation
-   */
+  // ---------------------------------------------------------------------------
+  // CREATE WORKSTATION
+  //   workstation fields: device_category, device_name, model, device_status,
+  //                       supplier, date_assigned, notes, accountability_form,
+  //                       assigned_user, employee_number, team, location,
+  //                       memory, motherboard, storage
+  //   assets: [{ asset_id, asset_role }]   ← already created by POST /api/assets
+  //
+  // Steps:
+  //   1. Resolve FK IDs for the workstation row.
+  //   2. Resolve (or create) the employee row, linking team & location.
+  //   3. INSERT into full_workstation → get device_id.
+  //   4. INSERT one workstation_assets row per asset (all inside a transaction).
+  //   5. Return the full workstation via getWorkstationById.
+  // ---------------------------------------------------------------------------
+
   static async createWorkstation(data) {
     const {
       device_category,
@@ -149,193 +340,93 @@ class Workstation {
       location,
       date_assigned,
       device_status,
-      warranty_status,
-      warranty_expiry_date,
       supplier,
-      processor_code,
-      processor_serial,
-      processor,
+      notes,
+      accountability_form,
       memory,
       motherboard,
       storage,
-      monitor1_code,
-      monitor1_serial,
-      monitor1,
-      monitor1_status,
-      monitor2_code,
-      monitor2_serial,
-      monitor2,
-      monitor2_status,
-      keyboard_code,
-      keyboard_serial,
-      keyboard,
-      keyboard_status,
-      mouse_code,
-      mouse_serial,
-      mouse,
-      mouse_status,
-      headset_code,
-      headset_serial,
-      headset,
-      headset_status,
-      webcam_code,
-      webcam_serial,
-      webcam,
-      webcam_status,
-      accountability_form,
-      notes,
+      assets = [],   // [{ asset_id, asset_role }]
     } = data;
 
-    // Get IDs for foreign keys (with fallback to NULL if not found)
-    const [
-      categoryResult,
-      statusResult,
-      warrantyStatusResult,
-      employeeResult,
-      teamResult,
-      locationResult,
-    ] = await Promise.all([
-      pool.query(
-        "SELECT device_category_id FROM device_category WHERE device_category_name = $1",
-        [device_category || "Laptop"],
-      ),
-      pool.query("SELECT status_id FROM status WHERE status_name = $1", [
-        device_status || "Active",
-      ]),
-      pool.query(
-        "SELECT warranty_status_id FROM warranty_status WHERE warranty_status_name = $1",
-        [warranty_status || "Active"],
-      ),
-      pool.query(
-        "SELECT employee_id FROM employee WHERE employee_name = $1 OR employee_number = $2",
-        [assigned_user || null, employee_number || null],
-      ),
-      pool.query("SELECT team_id FROM team WHERE team_name = $1", [
-        team || null,
-      ]),
-      pool.query("SELECT location_id FROM location WHERE location_name = $1", [
-        location || null,
-      ]),
-    ]);
+    const { categoryId, statusId } =
+      await Workstation.#resolveForeignKeys({ device_category, device_status });
 
-    const categoryId = categoryResult.rows[0]?.device_category_id || null;
-    const statusId = statusResult.rows[0]?.status_id || null;
-    const warrantyStatusId =
-      warrantyStatusResult.rows[0]?.warranty_status_id || null;
-    const employeeId = employeeResult.rows[0]?.employee_id || null;
-    const teamId = teamResult.rows[0]?.team_id || null;
-    const locationId = locationResult.rows[0]?.location_id || null;
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
 
-    const insertQuery = `
-      INSERT INTO full_workstation (
-        device_name,
-        device_category_id,
-        device_status_id,
-        warranty_status_id,
-        warranty_expiry_date,
-        employee_id,
-        team_id,
-        location_id,
-        date_assigned,
-        model,
-        supplier,
-        processor_code,
-        processor_serial,
-        processor,
-        memory,
-        motherboard,
-        storage,
-        monitor1_code,
-        monitor1_serial,
-        monitor1,
-        monitor1_status,
-        monitor2_code,
-        monitor2_serial,
-        monitor2,
-        monitor2_status,
-        keyboard_code,
-        keyboard_serial,
-        keyboard,
-        keyboard_status,
-        mouse_code,
-        mouse_serial,
-        mouse,
-        mouse_status,
-        headset_code,
-        headset_serial,
-        headset,
-        headset_status,
-        webcam_code,
-        webcam_serial,
-        webcam,
-        webcam_status,
-        accountability_form,
-        notes,
-        created_at,
-        updated_at
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-        $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
-        $21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
-        $31, $32, $33, $34, $35, $36, $37, $38, $39, $40,
-        $41, $42, $43, $44, NOW(), NOW()
-      )
-      RETURNING device_id
-    `;
+      // 2. Resolve or create employee (with team + location) inside the transaction
+      const employeeId = await Workstation.#resolveEmployeeId(
+        { assigned_user, employee_number, team, location },
+        client
+      );
 
-    const result = await pool.query(insertQuery, [
-      device_name,
-      categoryId,
-      statusId,
-      warrantyStatusId,
-      warranty_expiry_date || null,
-      employeeId,
-      teamId,
-      locationId,
-      date_assigned || null,
-      model || null,
-      supplier || null,
-      processor_code || null,
-      processor_serial || null,
-      processor || null,
-      memory || null,
-      motherboard || null,
-      storage || null,
-      monitor1_code || null,
-      monitor1_serial || null,
-      monitor1 || null,
-      monitor1_status || "Active",
-      monitor2_code || null,
-      monitor2_serial || null,
-      monitor2 || null,
-      monitor2_status || "Active",
-      keyboard_code || null,
-      keyboard_serial || null,
-      keyboard || null,
-      keyboard_status || "Active",
-      mouse_code || null,
-      mouse_serial || null,
-      mouse || null,
-      mouse_status || "Active",
-      headset_code || null,
-      headset_serial || null,
-      headset || null,
-      headset_status || "Active",
-      webcam_code || null,
-      webcam_serial || null,
-      webcam || null,
-      webcam_status || "Active",
-      accountability_form || null,
-      notes || null,
-    ]);
+      // 3. INSERT full_workstation
+      const insertWs = `
+        INSERT INTO full_workstation (
+          device_category_id,
+          device_name,
+          model,
+          employee_id,
+          status_id,
+          date_assigned,
+          supplier,
+          notes,
+          accountability_form,
+          memory,
+          motherboard,
+          storage,
+          created_at,
+          updated_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+          $11, $12, NOW(), NOW()
+        )
+        RETURNING device_id
+      `;
 
-    const deviceId = result.rows[0].device_id;
-    return await this.getWorkstationById(deviceId);
+      const wsResult = await client.query(insertWs, [
+        categoryId,
+        device_name         ?? null,
+        model               ?? null,
+        employeeId,
+        statusId,
+        date_assigned       ?? null,
+        supplier            ?? null,
+        notes               ?? null,
+        accountability_form ?? null,
+        memory              ?? null,
+        motherboard         ?? null,
+        storage             ?? null,
+      ]);
+
+      const deviceId = wsResult.rows[0].device_id;
+
+      // 4. INSERT workstation_assets rows for each provided asset
+      if (assets.length > 0) {
+        const insertWa = `
+          INSERT INTO workstation_assets (device_id, asset_id, asset_role, assigned_at)
+          VALUES ($1, $2, $3, NOW())
+        `;
+        for (const { asset_id, asset_role } of assets) {
+          await client.query(insertWa, [deviceId, asset_id, asset_role]);
+        }
+      }
+
+      await client.query("COMMIT");
+
+      // 5. Return the fully joined workstation record
+      return await Workstation.getWorkstationById(deviceId);
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
   }
 
-  /**
-   * Update a workstation
-   */
+  // UPDATE WORKSTATION
   static async updateWorkstation(deviceId, data) {
     const {
       device_category,
@@ -347,186 +438,211 @@ class Workstation {
       location,
       date_assigned,
       device_status,
-      warranty_status,
-      warranty_expiry_date,
       supplier,
-      processor_code,
-      processor_serial,
-      processor,
+      notes,
+      accountability_form,
       memory,
       motherboard,
       storage,
-      monitor1_code,
-      monitor1_serial,
-      monitor1,
-      monitor1_status,
-      monitor2_code,
-      monitor2_serial,
-      monitor2,
-      monitor2_status,
-      keyboard_code,
-      keyboard_serial,
-      keyboard,
-      keyboard_status,
-      mouse_code,
-      mouse_serial,
-      mouse,
-      mouse_status,
-      headset_code,
-      headset_serial,
-      headset,
-      headset_status,
-      webcam_code,
-      webcam_serial,
-      webcam,
-      webcam_status,
-      accountability_form,
-      notes,
     } = data;
 
-    // Get IDs for foreign keys
-    const [
-      categoryResult,
-      statusResult,
-      warrantyStatusResult,
-      employeeResult,
-      teamResult,
-      locationResult,
-    ] = await Promise.all([
-      pool.query(
-        "SELECT device_category_id FROM device_category WHERE device_category_name = $1",
-        [device_category],
-      ),
-      pool.query("SELECT status_id FROM status WHERE status_name = $1", [
-        device_status,
-      ]),
-      pool.query(
-        "SELECT warranty_status_id FROM warranty_status WHERE warranty_status_name = $1",
-        [warranty_status],
-      ),
-      pool.query(
-        "SELECT employee_id FROM employee WHERE employee_name = $1 OR employee_number = $2",
-        [assigned_user, employee_number],
-      ),
-      pool.query("SELECT team_id FROM team WHERE team_name = $1", [team]),
-      pool.query("SELECT location_id FROM location WHERE location_name = $1", [
-        location,
-      ]),
-    ]);
+    const { categoryId, statusId } =
+      await Workstation.#resolveForeignKeys({ device_category, device_status });
 
-    const categoryId = categoryResult.rows[0]?.device_category_id;
-    const statusId = statusResult.rows[0]?.status_id;
-    const warrantyStatusId = warrantyStatusResult.rows[0]?.warranty_status_id;
-    const employeeId = employeeResult.rows[0]?.employee_id;
-    const teamId = teamResult.rows[0]?.team_id;
-    const locationId = locationResult.rows[0]?.location_id;
+    // Resolve or upsert the employee (team + location updated if supplied)
+    const employeeId = await Workstation.#resolveEmployeeId(
+      { assigned_user, employee_number, team, location }
+    );
 
     const updateQuery = `
-      UPDATE full_workstation
-      SET
-        device_name = COALESCE($2, device_name),
-        device_category_id = COALESCE($3, device_category_id),
-        device_status_id = COALESCE($4, device_status_id),
-        warranty_status_id = COALESCE($5, warranty_status_id),
-        warranty_expiry_date = COALESCE($6, warranty_expiry_date),
-        employee_id = COALESCE($7, employee_id),
-        team_id = COALESCE($8, team_id),
-        location_id = COALESCE($9, location_id),
-        date_assigned = COALESCE($10, date_assigned),
-        model = COALESCE($11, model),
-        supplier = COALESCE($12, supplier),
-        processor_code = COALESCE($13, processor_code),
-        processor_serial = COALESCE($14, processor_serial),
-        processor = COALESCE($15, processor),
-        memory = COALESCE($16, memory),
-        motherboard = COALESCE($17, motherboard),
-        storage = COALESCE($18, storage),
-        monitor1_code = COALESCE($19, monitor1_code),
-        monitor1_serial = COALESCE($20, monitor1_serial),
-        monitor1 = COALESCE($21, monitor1),
-        monitor1_status = COALESCE($22, monitor1_status),
-        monitor2_code = COALESCE($23, monitor2_code),
-        monitor2_serial = COALESCE($24, monitor2_serial),
-        monitor2 = COALESCE($25, monitor2),
-        monitor2_status = COALESCE($26, monitor2_status),
-        keyboard_code = COALESCE($27, keyboard_code),
-        keyboard_serial = COALESCE($28, keyboard_serial),
-        keyboard = COALESCE($29, keyboard),
-        keyboard_status = COALESCE($30, keyboard_status),
-        mouse_code = COALESCE($31, mouse_code),
-        mouse_serial = COALESCE($32, mouse_serial),
-        mouse = COALESCE($33, mouse),
-        mouse_status = COALESCE($34, mouse_status),
-        headset_code = COALESCE($35, headset_code),
-        headset_serial = COALESCE($36, headset_serial),
-        headset = COALESCE($37, headset),
-        headset_status = COALESCE($38, headset_status),
-        webcam_code = COALESCE($39, webcam_code),
-        webcam_serial = COALESCE($40, webcam_serial),
-        webcam = COALESCE($41, webcam),
-        webcam_status = COALESCE($42, webcam_status),
-        accountability_form = COALESCE($43, accountability_form),
-        notes = COALESCE($44, notes),
-        updated_at = NOW()
+      UPDATE full_workstation SET
+        device_category_id  = COALESCE($2,  device_category_id),
+        device_name         = COALESCE($3,  device_name),
+        model               = COALESCE($4,  model),
+        employee_id         = COALESCE($5,  employee_id),
+        status_id           = COALESCE($6,  status_id),
+        date_assigned       = COALESCE($7,  date_assigned),
+        supplier            = COALESCE($8,  supplier),
+        notes               = COALESCE($9,  notes),
+        accountability_form = COALESCE($10, accountability_form),
+        memory              = COALESCE($11, memory),
+        motherboard         = COALESCE($12, motherboard),
+        storage             = COALESCE($13, storage),
+        updated_at          = NOW()
       WHERE device_id = $1
     `;
 
     await pool.query(updateQuery, [
       deviceId,
-      device_name,
       categoryId,
-      statusId,
-      warrantyStatusId,
-      warranty_expiry_date,
+      device_name         ?? null,
+      model               ?? null,
       employeeId,
-      teamId,
-      locationId,
-      date_assigned,
+      statusId,
+      date_assigned       ?? null,
+      supplier            ?? null,
+      notes               ?? null,
+      accountability_form ?? null,
+      memory              ?? null,
+      motherboard         ?? null,
+      storage             ?? null,
+    ]);
+
+    return await Workstation.getWorkstationById(deviceId);
+  }
+
+  // DELETE WORKSTATION
+  static async deleteWorkstation(deviceId) {
+    await pool.query(
+      "DELETE FROM full_workstation WHERE device_id = $1",
+      [deviceId]
+    );
+  }
+
+  
+  // ---------------------------------------------------------------------------
+  // GET ALL WORKSTATION ASSETS FOR A DEVICE (including "other" peripherals)
+  //
+  // Returns every active workstation_assets row for a given device_id,
+  // joined with asset details. Used by the Edit dialog to load ALL peripherals
+  // including dynamically-added "Other Peripherals" that have no fixed column
+  // in the pivoted Full Workstation View.
+  // ---------------------------------------------------------------------------
+
+  static async getWorkstationAssets(deviceId) {
+    const query = `
+      SELECT
+        wa.workstation_asset_id,
+        wa.asset_id,
+        wa.asset_role,
+        wa.assigned_at,
+        a.asset_code,
+        a.serial_number,
+        a.asset_name,
+        a.warranty_expiry_date,
+        at.asset_type_name,
+        at.asset_type_id,
+        s.status_name  AS status,
+        ws.warranty_status_name AS warranty_status
+      FROM workstation_assets wa
+      JOIN assets a           ON wa.asset_id       = a.asset_id
+      JOIN asset_type at      ON a.asset_type_id   = at.asset_type_id
+      LEFT JOIN status s      ON a.status_id       = s.status_id
+      LEFT JOIN warranty_status ws ON a.warranty_status_id = ws.warranty_status_id
+      WHERE wa.device_id   = $1
+        AND wa.removed_at IS NULL
+      ORDER BY wa.workstation_asset_id ASC
+    `;
+    const result = await pool.query(query, [deviceId]);
+    return result.rows;
+  }
+
+  // ---------------------------------------------------------------------------
+  // UPDATE WORKSTATION WITH ASSETS  (full edit-dialog save)
+  // Updates full_workstation + every touched assets row in one transaction.
+  // ---------------------------------------------------------------------------
+
+  static async updateWorkstationWithAssets(deviceId, data) {
+    const {
+      device_category,
+      device_name,
       model,
+      assigned_user,
+      employee_number,
+      date_assigned,
+      device_status,
       supplier,
-      processor_code,
-      processor_serial,
-      processor,
+      notes,
+      accountability_form,
       memory,
       motherboard,
       storage,
-      monitor1_code,
-      monitor1_serial,
-      monitor1,
-      monitor1_status,
-      monitor2_code,
-      monitor2_serial,
-      monitor2,
-      monitor2_status,
-      keyboard_code,
-      keyboard_serial,
-      keyboard,
-      keyboard_status,
-      mouse_code,
-      mouse_serial,
-      mouse,
-      mouse_status,
-      headset_code,
-      headset_serial,
-      headset,
-      headset_status,
-      webcam_code,
-      webcam_serial,
-      webcam,
-      webcam_status,
-      accountability_form,
-      notes,
-    ]);
+      assets = [],
+    } = data;
 
-    return await this.getWorkstationById(deviceId);
-  }
+    const { categoryId, statusId, warrantyStatusId } =
+      await Workstation.#resolveForeignKeys({ device_category, device_status });
 
-  /**
-   * Delete a workstation
-   */
-  static async deleteWorkstation(deviceId) {
-    const deleteQuery = "DELETE FROM full_workstation WHERE device_id = $1";
-    await pool.query(deleteQuery, [deviceId]);
+    const employeeId = await Workstation.#resolveEmployeeId({ assigned_user, employee_number });
+
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      // 1. Update full_workstation
+      await client.query(
+        `UPDATE full_workstation SET
+          device_category_id   = COALESCE($2,  device_category_id),
+          device_name          = COALESCE($3,  device_name),
+          model                = COALESCE($4,  model),
+          employee_id          = COALESCE($5,  employee_id),
+          status_id            = COALESCE($6,  status_id),
+          date_assigned        = COALESCE($7,  date_assigned),
+          supplier             = COALESCE($8, supplier),
+          notes                = COALESCE($9, notes),
+          accountability_form  = COALESCE($10, accountability_form),
+          memory               = COALESCE($11, memory),
+          motherboard          = COALESCE($12, motherboard),
+          storage              = COALESCE($13, storage),
+          updated_at           = NOW()
+        WHERE device_id = $1`,
+        [
+          deviceId,
+          categoryId,
+          device_name          ?? null,
+          model                ?? null,
+          employeeId,
+          statusId,
+          date_assigned        ?? null,
+          supplier             ?? null,
+          notes                ?? null,
+          accountability_form  ?? null,
+          memory               ?? null,
+          motherboard          ?? null,
+          storage              ?? null,
+        ]
+      );
+
+      // 2. Update each asset row
+      for (const asset of assets) {
+        const {
+          asset_id,
+          asset_name,
+          serial_number,
+          status,
+        } = asset;
+        if (!asset_id) continue;
+
+        const assetStatusRes = await client.query(
+          "SELECT status_id FROM status WHERE status_name = $1",
+          [status || "Active"]
+        );
+        const assetStatusId = assetStatusRes.rows[0]?.status_id ?? null;
+
+        await client.query(
+          `UPDATE assets SET
+            asset_name           = COALESCE($2, asset_name),
+            serial_number        = COALESCE($3, serial_number),
+            status_id            = COALESCE($4, status_id),
+            updated_at           = NOW()
+          WHERE asset_id = $1`,
+          [
+            asset_id,
+            asset_name          ?? null,
+            serial_number       ?? null,
+            assetStatusId,
+          ]
+        );
+      }
+
+      await client.query("COMMIT");
+      return await Workstation.getWorkstationById(deviceId);
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
   }
 }
 

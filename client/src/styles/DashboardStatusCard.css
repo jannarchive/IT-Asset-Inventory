@@ -1,100 +1,183 @@
+/* ============================================================
+   ROOT DESIGN TOKENS
+   Shared variables for color, typography, spacing, shape, and shadow.
+   ============================================================ */
+
 :root {
+  /* --- Colors --- */
   --color-primary: #0063a5;
   --color-secondary: #daeafe;
   --color-white: #f9fafb;
+  --color-surface: #fffffc;
   --color-red: #e52424;
   --color-text-dark: #222222;
   --color-text-gray: #767272;
   --color-border: #aeacac;
+  --color-border-card: #d9d9d9;
 
+  /* --- Typography --- */
   --font-base: "Poppins", sans-serif;
+  --font-size-xs:  clamp(11px, 1vw,   13px);
+  --font-size-sm:  clamp(13px, 1.5vw, 15px);
+  --font-size-md:  clamp(15px, 2.5vw, 20px);
+  --font-size-lg:  clamp(18px, 3vw,   26px);
+  --font-size-xl:  clamp(24px, 4vw,   32px);
+  --font-size-2xl: clamp(28px, 5vw,   50px);
 
-  /* Fluid spacing scale */
-  --space-xs: clamp(4px, 0.5vw, 8px);
-  --space-sm: clamp(8px, 1vw, 16px);
-  --space-md: clamp(16px, 2vw, 28px);
-  --space-lg: clamp(24px, 3vw, 48px);
-  --space-xl: clamp(40px, 6vw, 80px);
+  /* --- Fluid Spacing Scale --- */
+  --space-xs: clamp(4px,  0.5vw, 8px);
+  --space-sm: clamp(8px,  1vw,   16px);
+  --space-md: clamp(16px, 2vw,   28px);
+  --space-lg: clamp(24px, 3vw,   48px);
+  --space-xl: clamp(40px, 6vw,   80px);
+
+  /* --- Border Radius --- */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   10px;
+  --radius-full: 9999px;
+
+  /* --- Shadows --- */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.10);
+  --shadow-lg: 0 16px 32px rgba(0, 99, 165, 0.15);
+
+  /* --- Status Card Dimensions --- */
+  --card-min-width: 270px;
+  --card-max-width: 300px;
 }
+
+
+/* ============================================================
+   STATUS CARD GRID CONTAINER
+   Wrapping grid that holds all status cards side-by-side.
+   Leaves room for any right-side panel via max-width.
+   ============================================================ */
 
 .Status-card-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    flex-grow: 1;  /* Allow status cards to take up available space */
-    max-width: calc(100% - 320px); /* Leaves space for the right panel */
-  }
-  
-  /* Each card */
-  .Status-card {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    min-width: 275px;
-    max-width: 300px;  
-    padding: 10px;
-    border: 1px solid #D9D9D9;
-    border-radius: 8px;
-    background-color: var(--color-white);
-    font-family: var(--font-base);
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
-  }
-
-  .Status-card:hover {
-  transform: translateY(-0.5px);
-  color: var(--color-text-primary);
-  box-shadow: 0 16px 32px var(--color-secondary);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  flex-grow: 1;
 }
-  
-  .Status-card-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+
+
+/* ============================================================
+   STATUS CARD
+   Individual metric tile — icon on the left, stats on the right.
+   ============================================================ */
+
+.Status-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  min-width: var(--card-min-width);
+  max-width: var(--card-max-width);
+  flex: 1 1 var(--card-min-width);
+
+  padding: var(--space-sm);
+
+  border: 1px solid var(--color-border-card);
+  border-radius: var(--radius-md);
+  background-color: var(--color-white);
+
+  font-family: var(--font-base);
+
+  box-shadow: var(--shadow-md);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.Status-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+
+/* ============================================================
+   CARD ICON SLOT
+   Centered container for the card's leading icon/image.
+   ============================================================ */
+
+.Status-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* ============================================================
+   CARD DETAILS
+   Right-aligned column that holds the count and status label.
+   ============================================================ */
+
+.Status-card-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+
+
+/* ============================================================
+   CARD COUNT
+   Large numeric figure — primary data value on the card.
+   ============================================================ */
+
+.Status-card-count {
+  font-size: var(--font-size-xl);
+  font-weight: 400;
+  color: var(--color-text-dark);
+}
+
+
+/* ============================================================
+   CARD STATUS LABEL
+   Descriptive text beneath the count value.
+   ============================================================ */
+
+.Status-card-status {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-gray);
+}
+
+.Status-card-divider {
+  position: absolute;
+}
+
+
+/* ============================================================
+   RESPONSIVE — TABLET (max 900px)
+   Allow cards to stretch full-width when layout is narrow.
+   ============================================================ */
+
+@media (max-width: 900px) {
+  .Status-card {
+    max-width: 100%;
   }
-  
-  .Status-card-details {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    text-align: right;
-  }
-  
-  .Status-card-count {
-    font-size: 26px;
-    font-weight: normal;
-    color: var(--color-text-dark);
-  }
-  
-  .Status-card-status {
-    font-size: 16px;
-    color: var(--color-text-dark);
-  }
-  
-  .Status-card-divider {
-    position: absolute;
-  }
-  
-  /* Custom classes for different bottom-border colors */
-  .Status-card-total-assets {
-    border-bottom: 7px solid #767272;
-  }
-  
-  .Status-card-active-assets {
-    border-bottom: 7px solid #44D852;
-  }
-  
-  .Status-card-defective-assets {
-    border-bottom: 7px solid #B71919;
-  }
-  
-  .Status-card-incomplete-workstation {
-    border-bottom: 7px solid #FF6A00;
+}
+
+
+/* ============================================================
+   RESPONSIVE — MOBILE PORTRAIT (max 480px)
+   Single-column layout; cards fill the available width.
+   ============================================================ */
+
+@media (max-width: 480px) {
+  .Status-card-container {
+    gap: var(--space-sm);
   }
 
-    /* Make cards responsive on smaller screens */
-  @media (max-width: 900px) {
-    .Status-card {
-      width: 100%; /* Allow full width for small screens */
-    }
+  .Status-card {
+    min-width: 100%;
+    max-width: 100%;
   }
+
+  .Status-card-count {
+    font-size: var(--font-size-lg);
+  }
+
+  .Status-card-status {
+    font-size: var(--font-size-xs);
+  }
+}

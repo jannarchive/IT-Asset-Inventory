@@ -46,8 +46,10 @@ function Login() {
       // anon key, which is blocked by RLS on system_users. Trust the backend JWT.
       localStorage.setItem("authToken", data.token);
       localStorage.setItem("system_user", JSON.stringify(data.user));
+      localStorage.setItem('adminName', data.user.full_name);
+      localStorage.setItem('adminEmail', data.user.email);
 
-      navigate("/admin-dashboard");
+      navigate("/admin/dashboard");
     } catch (err) {
       setError(err.message || "Login failed. Please try again.");
       console.error("Login error:", err);
@@ -131,8 +133,10 @@ function Login() {
                 full_name: systemUser.full_name,
               }),
             );
+            localStorage.setItem('adminName', backendData.user.full_name);
+            localStorage.setItem('adminEmail', backendData.user.email);
 
-            navigate("/admin-dashboard");
+            navigate("/admin/dashboard");
           } catch (err) {
             console.error("Auth verification error:", err);
             setError(
@@ -190,7 +194,11 @@ function Login() {
               />
             </div>
 
-            <button type="submit" disabled={loading} className="Login-button">
+            <button 
+              type="submit" 
+              disabled={loading} 
+              className="Login-button"
+            >
               {loading ? "Logging in..." : "Log In"}
             </button>
           </form>

@@ -1,16 +1,12 @@
 import pool from "../config/Database.js";
 
 class Dashboard {
-  /**
-   * Fetches all four status card counts in two DB round-trips:
-   *  1. A single aggregated query for total / active / defective assets.
-   *  2. A separate query for incomplete workstations (requires a NOT EXISTS subquery).
-   */
   static async getDashboardStats() {
     const statsQuery = `
       SELECT
         COUNT(*)                                                                  AS total_assets,
         COUNT(*) FILTER (WHERE s.status_name = 'Active')                         AS active_assets,
+        COUNT(*) FILTER (WHERE s.status_name = 'In Storage')                         AS instorage_assets,
         COUNT(*) FILTER (WHERE s.status_name IN ('Defective', 'Under Maintenance')) AS defective_assets
       FROM assets a
       JOIN status s ON a.status_id = s.status_id
@@ -42,6 +38,7 @@ class Dashboard {
     return {
       totalAssets:            parseInt(row.total_assets,          10),
       activeAssets:           parseInt(row.active_assets,         10),
+      inStorageAssets:        parseInt(row.instorage_assets,      10),
       defectiveAssets:        parseInt(row.defective_assets,      10),
       incompleteWorkstations: parseInt(incompleteResult.rows[0].total, 10),
     };
@@ -57,7 +54,17 @@ class Dashboard {
         at.asset_type_name,
         COUNT(a.asset_id) AS total
       FROM asset_type at
-      LEFT JOIN assets a ON at.asset_type_id = a.asset_type_id
+      LEFT JOIN assets a
+          ON at.asset_type_id = a.asset_type_id
+          AND a.status_id = 1
+      WHERE at.asset_type_name IN (
+      'Processor (CPU)',
+      'Monitor',
+      'Keyboard',
+      'Mouse',
+      'Headset',
+      'Webcam'
+      )
       GROUP BY at.asset_type_id, at.asset_type_name
       ORDER BY total DESC
     `;

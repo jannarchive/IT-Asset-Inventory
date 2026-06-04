@@ -17,7 +17,7 @@
   --space-xl: clamp(40px, 6vw, 80px);
 }
 
-.bar-graph-container {
+.Bar-graph-container {
   background: var(--color-white);
   border-radius: 8px;
   padding: 20px;
@@ -28,11 +28,31 @@
   text-align: center;
 }
 
-.bar-graph-container h3 {
+.Bar-graph-container h3 {
   margin-top: 0;
   color: var(--color-text-dark);
   font-size: 1.25rem;
   margin-bottom: 15px;
+}
+
+.Custom-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.Legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.Legend-color {
+  width: 15px;
+  height: 15px;
 }
 
 /* Responsive design for smaller screens */
