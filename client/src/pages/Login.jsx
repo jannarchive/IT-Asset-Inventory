@@ -78,71 +78,84 @@ function Login() {
 
 
   useEffect(() => {
+    let active = true;
+    let callbackTimeout;
+
+    const completeOAuthLogin = async (session) => {
+      setLoading(true);
+
+      try {
+        const { data: systemUser, error: queryError } = await supabase
+          .from("system_users")
+          .select("system_users_id, email, full_name")
+          .eq("email", session.user.email)
+          .single();
+
+        if (queryError || !systemUser) {
+          await supabase.auth.signOut();
+          setError(
+            "Your Google account is not authorized to access this system. Contact the system administrator.",
+          );
+          setLoading(false);
+          return;
+        }
+
+        const backendResponse = await fetch(
+          `${import.meta.env.VITE_SERVER_URL || "https://it-asset-inventory-server.onrender.com"}/api/auth/oauth-login`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: systemUser.email }),
+          },
+        );
+
+        const backendData = await backendResponse.json();
+
+        if (!backendResponse.ok) {
+          throw new Error(
+            backendData.error ||
+              "Failed to complete OAuth login. Please try again.",
+          );
+        }
+
+        localStorage.setItem("authToken", backendData.token);
+        localStorage.setItem(
+          "system_user",
+          JSON.stringify({
+            system_users_id: systemUser.system_users_id,
+            email: systemUser.email,
+            full_name: systemUser.full_name,
+          }),
+        );
+        localStorage.setItem("adminName", backendData.user.full_name);
+        localStorage.setItem("adminEmail", backendData.user.email);
+
+        navigate("/admin/dashboard");
+      } catch (err) {
+        console.error("Auth verification error:", err);
+        setError(
+          err.message ||
+            "An error occurred during authentication. Please try again.",
+        );
+        setLoading(false);
+      }
+    };
+
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (event === "SIGNED_IN" && session) {
-          try {
-            const { data: systemUser, error: queryError } = await supabase
-              .from("system_users")
-              .select("system_users_id, email, full_name")
-              .eq("email", session.user.email)
-              .single();
-
-            if (queryError || !systemUser) {
-              await supabase.auth.signOut();
-              setError(
-                "Your Google account is not authorized to access this system. Contact the system administrator.",
-              );
-              setLoading(false);
-              return;
+          callbackTimeout = window.setTimeout(() => {
+            if (active) {
+              void completeOAuthLogin(session);
             }
-
-            // Call backend to issue a JWT token for API access
-            // The backend will verify the user is active and return a signed JWT
-            const backendResponse = await fetch(
-              `${import.meta.env.VITE_SERVER_URL || "https://it-asset-inventory-server.onrender.com"}/api/auth/oauth-login`,
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email: systemUser.email }),
-              },
-            );
-
-            const backendData = await backendResponse.json();
-
-            if (!backendResponse.ok) {
-              throw new Error(
-                backendData.error ||
-                  "Failed to complete OAuth login. Please try again.",
-              );
-            }
-
-            // Store the backend JWT token for API access
-            localStorage.setItem("authToken", backendData.token);
-            localStorage.setItem(
-              "system_user",
-              JSON.stringify({
-                system_users_id: systemUser.system_users_id,
-                email: systemUser.email,
-                full_name: systemUser.full_name,
-              }),
-            );
-            localStorage.setItem('adminName', backendData.user.full_name);
-            localStorage.setItem('adminEmail', backendData.user.email);
-
-            navigate("/admin/dashboard");
-          } catch (err) {
-            console.error("Auth verification error:", err);
-            setError(
-              "An error occurred during authentication. Please try again.",
-            );
-            setLoading(false);
-          }
+          }, 0);
         }
       },
     );
 
     return () => {
+      active = false;
+      window.clearTimeout(callbackTimeout);
       authListener?.subscription?.unsubscribe();
     };
   }, [navigate]);
