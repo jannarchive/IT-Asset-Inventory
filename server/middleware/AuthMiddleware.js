@@ -18,7 +18,6 @@ export const authenticateToken = (req, res, next) => {
 
     jwt.verify(token, JWT_SECRET, (err, decoded) => {
       if (err) {
-        // Distinguish expired tokens from tampered ones for easier debugging
         if (err.name === "TokenExpiredError") {
           return res.status(401).json({ error: "Unauthorized - Token has expired" });
         }

@@ -24,16 +24,11 @@ export const login = async (req, res) => {
       return res.status(400).json({ error: "Email and password are required" });
     }
 
-    // Get user with status joined
     const user = await User.getUserByEmail(email);
-
-    // Use a generic message for both "not found" and "wrong password"
-    // to avoid leaking which emails exist in the system
     if (!user) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    // Check user_status — only 'Active' users can log in
     if (user.user_status !== "Active") {
       return res
         .status(403)
@@ -42,9 +37,9 @@ export const login = async (req, res) => {
         });
     }
 
-    // Guard: bcrypt hashes are always exactly 60 characters.
+    // bcrypt hashes are always exactly 60 characters.
     // If the hash is shorter, it was truncated by the old VARCHAR(50) column
-    // and can no longer be verified. The admin must reset the password directly in the DB.
+    // and can no longer be verified. The admin must reset the password directly in the database.
     if (!user.password.startsWith("$2") || user.password.length < 60) {
       console.error(
         `Corrupted password hash for user ${user.email} (length: ${user.password.length}). ` +
@@ -104,15 +99,14 @@ export const getCurrentUser = async (req, res) => {
   }
 };
 
-// Logout — JWT is stateless; client removes the token.
-// This endpoint exists for a clean API contract and future token blacklisting.
+// Logout
 export const logout = (req, res) => {
   res.status(200).json({ message: "Logged out successfully" });
 };
 
-// OAuth Login — after Supabase verifies the user, issue a backend JWT
-// The frontend has already verified the user exists via Supabase RLS.
-// This endpoint completes the flow by issuing a JWT for API access.
+// OAuth Login - after Supabase verifies the user, it issues a backend JWT
+// The frontend has already verified the user exists via Supabase RLS
+// This endpoint completes the flow by issuing a JWT for API access
 export const oauthLogin = async (req, res) => {
   try {
     const { email } = req.body;
@@ -128,7 +122,6 @@ export const oauthLogin = async (req, res) => {
       return res.status(401).json({ error: "User not found in system" });
     }
 
-    // Check user_status — only 'Active' users can log in
     if (user.user_status !== "Active") {
       return res
         .status(403)

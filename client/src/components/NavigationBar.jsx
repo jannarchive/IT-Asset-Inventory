@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import Logout from '@mui/icons-material/LogoutOutlined';
-import logo from '../assets/LinkedBPO-logo.png';
 
+import logo from '../assets/LinkedBPO-logo.png';
 import '../styles/NavigationBar.css';
 
 

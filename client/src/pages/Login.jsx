@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/SupabaseClient";
-
 import "../styles/Login.css";
 import backgroundImage from "../assets/login-page-background.png";
 
@@ -12,7 +11,7 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // ─── Email / Password ──────────────────────────────────────────────────────
+  // Email / Password 
   // Sends credentials to the backend, which queries system_users and compares
   // the password with bcrypt. The backend returns a signed JWT on success.
   const handleLogin = async (e) => {
@@ -40,10 +39,6 @@ function Login() {
         throw new Error(data.error || "Login failed. Please try again.");
       }
 
-      // The backend already verified the user against system_users via bcrypt.
-      // A second Supabase check here is redundant AND breaks — email/password
-      // users are not in Supabase Auth, so the Supabase client falls back to the
-      // anon key, which is blocked by RLS on system_users. Trust the backend JWT.
       localStorage.setItem("authToken", data.token);
       localStorage.setItem("system_user", JSON.stringify(data.user));
       localStorage.setItem('adminName', data.user.full_name);
@@ -58,8 +53,7 @@ function Login() {
     }
   };
 
-  // ─── Google OAuth: initiate redirect ──────────────────────────────────────
-  // The whitelist check happens in onAuthStateChange after Google redirects back.
+  // Google OAuth: initiate redirect 
   const handleSignUpWithGoogle = async () => {
     setLoading(true);
     setError("");
@@ -72,7 +66,6 @@ function Login() {
       if (supabaseError) {
         throw new Error(supabaseError.message);
       }
-      // Loading stays true — page redirects to Google.
     } catch (err) {
       setError(err.message || "Google sign-in failed. Please try again.");
       console.error("Google sign-in error:", err);
@@ -80,9 +73,7 @@ function Login() {
     }
   };
 
-  // ─── Google OAuth: fires after redirect back from Google ──────────────────
-  // At this point the user has a Supabase Auth session (authenticated role),
-  // so the RLS policy `USING (email = auth.email())` allows the SELECT.
+
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {

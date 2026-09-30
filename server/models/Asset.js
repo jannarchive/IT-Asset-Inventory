@@ -1,12 +1,6 @@
 import pool from "../config/Database.js";
 import { generateAssetCode } from "../utils/AssetCodeGenerator.js";
 
-/**
- * Get all workstation assets with complete workstation and asset details
- * This queries the workstation_assets table to show which assets are assigned to workstations
- *
- * @returns {Promise<Array>} Array of workstation asset records with related data
- */
 export const getAllWorkstationAssets = async () => {
   try {
     const query = `
@@ -58,7 +52,6 @@ export const getAllWorkstationAssets = async () => {
   }
 };
 
-// Get asset by ID
 export const getAssetById = async (assetId) => {
   try {
     const query = `
@@ -77,34 +70,20 @@ export const getAssetById = async (assetId) => {
   }
 };
 
-/**
- * Normalize an asset type name by stripping trailing ordinal suffixes.
- * Examples: "Monitor 1" → "Monitor", "Monitor 2" → "Monitor", "Keyboard" → "Keyboard"
- * This ensures that peripheral roles like "Monitor 1" resolve to the canonical
- * "Monitor" asset type instead of attempting to create a duplicate type.
- */
 const normalizeAssetTypeName = (name) => {
   return name.trim().replace(/\s+\d+$/, "").trim();
 };
 
-/**
- * Generate a unique 3-character asset type code from a name.
- * Checks the DB for conflicts and appends a numeric suffix if needed.
- * Examples: "Monitor" → "LBPO-MON", "Miscellaneous" → "LBPO-MIS"
- * If "LBPO-MON" is taken by a different type, tries "LBPO-MO2", "LBPO-MO3", …
- */
 const generateAssetTypeCode = async (name) => {
   const base = name.trim().toUpperCase().substring(0, 3);
   const primaryCode = `LBPO-${base}`;
 
-  // Check if the primary code is already taken
   const existing = await pool.query(
     "SELECT asset_type_code FROM asset_type WHERE asset_type_code = $1",
     [primaryCode]
   );
   if (existing.rows.length === 0) return primaryCode;
 
-  // Primary code is taken — find a free numeric variant (LBPO-MO2 … LBPO-MO9)
   const prefix2 = base.substring(0, 2);
   for (let suffix = 2; suffix <= 9; suffix++) {
     const candidate = `LBPO-${prefix2}${suffix}`;
@@ -115,23 +94,13 @@ const generateAssetTypeCode = async (name) => {
     if (check.rows.length === 0) return candidate;
   }
 
-  // Fallback: use a short timestamp fragment (virtually collision-free)
   return `LBPO-${base.substring(0, 2)}${Date.now().toString().slice(-1)}`;
 };
 
-/**
- * Get or create an asset type by name.
- * Normalizes the name first (strips trailing ordinal suffixes such as " 1", " 2")
- * so that "Monitor 1" and "Monitor 2" both resolve to the existing "Monitor" type.
- * If the normalized name does not exist, auto-creates it with a generated code.
- * @param {string} assetTypeName - Raw name (may include ordinal suffix)
- * @returns {Promise<Object>} - The asset type with asset_type_id and asset_type_code
- */
 export const getOrCreateAssetType = async (assetTypeName) => {
   try {
     const normalizedName = normalizeAssetTypeName(assetTypeName);
 
-    // Check if asset type already exists (case-insensitive, using normalized name)
     const existingQuery = `
       SELECT asset_type_id, asset_type_name, asset_type_code
       FROM asset_type
@@ -143,7 +112,6 @@ export const getOrCreateAssetType = async (assetTypeName) => {
       return existingResult.rows[0];
     }
 
-    // Create new asset type with a unique auto-generated code
     const generatedCode = await generateAssetTypeCode(normalizedName);
 
     const createQuery = `
@@ -154,7 +122,6 @@ export const getOrCreateAssetType = async (assetTypeName) => {
 
     const createResult = await pool.query(createQuery, [normalizedName, generatedCode]);
 
-    // Initialize the sequence for this new asset type
     const initSequenceQuery = `
       INSERT INTO asset_code_sequences (asset_type_id, last_number)
       VALUES ($1, 0)
@@ -194,8 +161,6 @@ export const getAllAssetsLegacy = async () => {
   }
 };
 
-// Get all asset types - used by the frontend to populate peripheral type dropdowns
-// and to resolve asset_type_id for asset code generation
 export const getAllAssetTypes = async () => {
   try {
     const query = `
@@ -221,20 +186,17 @@ const resolveStatusId = async (statusName) => {
 
 const normalizeAssetType = async (assetData) => {
   if (assetData.asset_type_id) {
-    // Validate the provided ID actually exists to prevent phantom FK references
     const check = await pool.query(
       "SELECT asset_type_id FROM asset_type WHERE asset_type_id = $1",
       [assetData.asset_type_id]
     );
     if (check.rows.length > 0) return assetData.asset_type_id;
-    // ID not found — fall through to name resolution
   }
 
   if (!assetData.asset_type_name) {
     throw new Error("Asset type name or a valid asset_type_id is required");
   }
 
-  // getOrCreateAssetType normalizes the name internally (strips ordinal suffixes)
   const assetType = await getOrCreateAssetType(assetData.asset_type_name);
   return assetType.asset_type_id;
 };
@@ -252,14 +214,12 @@ const normalizeAssetCode = async ({ assetCode, assetTypeId }) => {
 // Create new asset
 export const createAsset = async (assetData) => {
   try {
-    // Normalise field names: snake_case (frontend) wins over camelCase (legacy)
     const assetName    = assetData.asset_name   ?? assetData.assetName   ?? null;
     const serialNumber = assetData.serial_number ?? assetData.serialNumber ?? null;
     const assetTypeId  = assetData.asset_type_id ?? assetData.assetTypeId  ?? null;
     const assetCode    = assetData.asset_code    ?? assetData.assetCode    ?? null;
     const notes        = assetData.notes                                   ?? null;
     const status       = assetData.status                                  ?? "Active";
-    // asset_role belongs in workstation_assets, not assets — round-trip it only
     const assetRole    = assetData.asset_role ?? null;
 
     const resolvedTypeId   = await normalizeAssetType({
@@ -288,7 +248,6 @@ export const createAsset = async (assetData) => {
       notes,
     ]);
 
-    // Return all columns the controller needs, plus the round-tripped role
     return { ...result.rows[0], asset_role: assetRole };
   } catch (error) {
     console.error("Database error in createAsset:", error);
@@ -296,11 +255,6 @@ export const createAsset = async (assetData) => {
   }
 };
 
-// ---------------------------------------------------------------------------
-// Batch-create assets inside a single transaction.
-// A failure on any one asset rolls the whole batch back, keeping `assets` and
-// `workstation_assets` consistent and preventing orphaned sequence gaps.
-// ---------------------------------------------------------------------------
 export const createAssetsBatch = async (assetRecords) => {
   if (!Array.isArray(assetRecords) || assetRecords.length === 0) {
     throw new Error("Asset batch must be a non-empty array");
@@ -312,10 +266,7 @@ export const createAssetsBatch = async (assetRecords) => {
 
     const createdAssets = [];
     for (const assetData of assetRecords) {
-      // createAsset uses pool for its read-only FK lookups (resolveStatusId etc.)
-      // which is safe; only the INSERT uses the pool as well.  We keep the
-      // implementation centralised in createAsset and rely on the outer
-      // transaction here for atomicity on the write path.
+
       const created = await createAsset(assetData);
       createdAssets.push(created);
     }

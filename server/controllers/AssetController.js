@@ -76,10 +76,7 @@ export const getOrCreateAssetType = async (req, res) => {
 };
 
 // POST /assets
-// Receives { assets: [...] } — an array of asset objects from the frontend.
-// Each object uses snake_case keys: asset_name, serial_number, asset_type_name,
-// asset_type_id, asset_code, status,
-// asset_role (round-tripped for the workstation_assets link; not stored here).
+// Receives an array of asset objects from the frontend.
 export const createAsset = async (req, res) => {
   try {
     const assets = req.body.assets;
@@ -91,9 +88,8 @@ export const createAsset = async (req, res) => {
       return res.status(200).json({ assets: [] });
     }
 
-    // Validate each asset has at least a type identifier so we can resolve
-    // asset_type_id and generate an asset code.  asset_name is optional —
-    // the user may submit with only a serial number.
+    // Validate each asset has a type identifier to resolve
+    // asset_type_id and generate an asset code
     assets.forEach((asset, index) => {
       const hasType = asset.asset_type_id || asset.asset_type_name;
       if (!hasType) {
@@ -202,9 +198,7 @@ export const getAssetsByType = async (req, res) => {
   }
 };
 // POST /assets/generate-codes
-// Generates asset codes by incrementing sequences in the DB.
-// Delegates to the same utility used by the workstation controller.
-// Body: { assetTypes: { [role]: assetTypeId, ... } }
+// Generates asset codes by incrementing sequences in the database
 export const generateAssetCodes = async (req, res) => {
   try {
     const { generateMultipleAssetCodes } = await import("../utils/AssetCodeGenerator.js");

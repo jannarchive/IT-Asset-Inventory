@@ -1,10 +1,6 @@
 import pool from "../config/Database.js";
 
 class Workstation {
-  /**
-   * Resolve FK IDs needed for full_workstation in one round-trip batch.
-   * Returns null for any lookup that finds no matching row.
-   */
   static async #resolveForeignKeys({ device_category, device_status }) {
     const [categoryResult, statusResult] = await Promise.all([
       pool.query(
@@ -23,9 +19,6 @@ class Workstation {
     };
   }
 
-  /**
-   * Resolve team_id from team name. Returns null if not provided or not found.
-   */
   static async #resolveTeamId(teamName) {
     if (!teamName) return null;
     const result = await pool.query(
@@ -35,9 +28,6 @@ class Workstation {
     return result.rows[0]?.team_id ?? null;
   }
 
-  /**
-   * Resolve location_id from location name. Returns null if not provided or not found.
-   */
   static async #resolveLocationId(locationName) {
     if (!locationName) return null;
     const result = await pool.query(
@@ -47,10 +37,7 @@ class Workstation {
     return result.rows[0]?.location_id ?? null;
   }
 
-  /**
-   * Resolve oan employee from the provided fields.
-   * Returns employee_id, or null when no identifying information is supplied.
-   */
+
   static async #resolveEmployeeId({ assigned_user, employee_number, team, location }, client) {
     if (!assigned_user && !employee_number) return null;
 
@@ -59,7 +46,6 @@ class Workstation {
     const teamId     = await Workstation.#resolveTeamId(team);
     const locationId = await Workstation.#resolveLocationId(location);
 
-    // 1. Try to find an existing employee
     const findResult = await db.query(
       `SELECT employee_id FROM employees
        WHERE ($1::text IS NOT NULL AND employee_number = $1)
@@ -71,7 +57,6 @@ class Workstation {
     if (findResult.rows.length > 0) {
       const employeeId = findResult.rows[0].employee_id;
 
-      // Sync team / location if the caller supplied them
       if (teamId !== null || locationId !== null) {
         await db.query(
           `UPDATE employees SET
@@ -85,7 +70,6 @@ class Workstation {
       return employeeId;
     }
 
-    // 2. Employee not found — create a minimal record so the workstation links correctly
     const insertResult = await db.query(
       `INSERT INTO employees (employee_name, employee_number, team_id, location_id)
        VALUES ($1, $2, $3, $4)
@@ -313,22 +297,7 @@ class Workstation {
     return result.rows[0] ?? null;
   }
 
-  // ---------------------------------------------------------------------------
   // CREATE WORKSTATION
-  //   workstation fields: device_category, device_name, model, device_status,
-  //                       supplier, date_assigned, notes, accountability_form,
-  //                       assigned_user, employee_number, team, location,
-  //                       memory, motherboard, storage
-  //   assets: [{ asset_id, asset_role }]   ← already created by POST /api/assets
-  //
-  // Steps:
-  //   1. Resolve FK IDs for the workstation row.
-  //   2. Resolve (or create) the employee row, linking team & location.
-  //   3. INSERT into full_workstation → get device_id.
-  //   4. INSERT one workstation_assets row per asset (all inside a transaction).
-  //   5. Return the full workstation via getWorkstationById.
-  // ---------------------------------------------------------------------------
-
   static async createWorkstation(data) {
     const {
       device_category,
@@ -346,7 +315,7 @@ class Workstation {
       memory,
       motherboard,
       storage,
-      assets = [],   // [{ asset_id, asset_role }]
+      assets = [],
     } = data;
 
     const { categoryId, statusId } =
@@ -355,14 +324,11 @@ class Workstation {
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
-
-      // 2. Resolve or create employee (with team + location) inside the transaction
       const employeeId = await Workstation.#resolveEmployeeId(
         { assigned_user, employee_number, team, location },
         client
       );
 
-      // 3. INSERT full_workstation
       const insertWs = `
         INSERT INTO full_workstation (
           device_category_id,
@@ -403,7 +369,6 @@ class Workstation {
 
       const deviceId = wsResult.rows[0].device_id;
 
-      // 4. INSERT workstation_assets rows for each provided asset
       if (assets.length > 0) {
         const insertWa = `
           INSERT INTO workstation_assets (device_id, asset_id, asset_role, assigned_at)
@@ -416,7 +381,6 @@ class Workstation {
 
       await client.query("COMMIT");
 
-      // 5. Return the fully joined workstation record
       return await Workstation.getWorkstationById(deviceId);
     } catch (err) {
       await client.query("ROLLBACK");
@@ -449,7 +413,6 @@ class Workstation {
     const { categoryId, statusId } =
       await Workstation.#resolveForeignKeys({ device_category, device_status });
 
-    // Resolve or upsert the employee (team + location updated if supplied)
     const employeeId = await Workstation.#resolveEmployeeId(
       { assigned_user, employee_number, team, location }
     );
@@ -499,16 +462,6 @@ class Workstation {
     );
   }
 
-  
-  // ---------------------------------------------------------------------------
-  // GET ALL WORKSTATION ASSETS FOR A DEVICE (including "other" peripherals)
-  //
-  // Returns every active workstation_assets row for a given device_id,
-  // joined with asset details. Used by the Edit dialog to load ALL peripherals
-  // including dynamically-added "Other Peripherals" that have no fixed column
-  // in the pivoted Full Workstation View.
-  // ---------------------------------------------------------------------------
-
   static async getWorkstationAssets(deviceId) {
     const query = `
       SELECT
@@ -537,10 +490,8 @@ class Workstation {
     return result.rows;
   }
 
-  // ---------------------------------------------------------------------------
   // UPDATE WORKSTATION WITH ASSETS  (full edit-dialog save)
-  // Updates full_workstation + every touched assets row in one transaction.
-  // ---------------------------------------------------------------------------
+  // Updates full_workstation and every updated assets row in one transaction.
 
   static async updateWorkstationWithAssets(deviceId, data) {
     const {
@@ -569,7 +520,6 @@ class Workstation {
     try {
       await client.query("BEGIN");
 
-      // 1. Update full_workstation
       await client.query(
         `UPDATE full_workstation SET
           device_category_id   = COALESCE($2,  device_category_id),
@@ -603,7 +553,6 @@ class Workstation {
         ]
       );
 
-      // 2. Update each asset row
       for (const asset of assets) {
         const {
           asset_id,

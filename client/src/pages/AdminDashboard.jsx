@@ -10,12 +10,8 @@ import NavigationBar from "../components/NavigationBar.jsx";
 import Sidebar from "../components/Sidebar.jsx";
 import DashboardStatusCard from "../components/DashboardStatusCard.jsx";
 import BarGraph from "../components/BarGraph.jsx";
-import api from "../api.js"; // shared axios instance — auth token attached automatically
+import api from "../api.js";
 import "../styles/AdminDashboard.css";
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
 
 const STATUS_CONFIG = [
   {
@@ -52,17 +48,16 @@ const STATUS_CONFIG = [
 
 const ACTIVITY_LIMIT = 10;
 
-/** Formats a timestamp string for display. */
+/* Formats a timestamp string for display. */
 function formatDate(timestamp) {
   return new Date(timestamp).toLocaleString("en-PH");
 }
 
 // ---------------------------------------------------------------------------
-// Component
+// Main component
 // ---------------------------------------------------------------------------
 
 function AdminDashboard() {
-  // -- State -----------------------------------------------------------------
   const [stats, setStats] = useState({
     totalAssets: 0,
     activeAssets: 0,
@@ -73,7 +68,7 @@ function AdminDashboard() {
   const [assetTypes, setAssetTypes] = useState([]);
   const [recentActivities, setRecentActivities] = useState([]);
 
-  // Independent loading/error state per section so one failure never hides another.
+  // Independent loading/error state per section so one failure never hides another
   const [loadingStats, setLoadingStats] = useState(true);
   const [loadingAssetTypes, setLoadingAssetTypes] = useState(true);
   const [loadingActivities, setLoadingActivities] = useState(true);
@@ -81,7 +76,7 @@ function AdminDashboard() {
   const [errorAssetTypes, setErrorAssetTypes] = useState(null);
   const [errorActivities, setErrorActivities] = useState(null);
 
-  // -- Live clock ------------------------------------------------------------
+  // Live clock
   const date = new Date().toLocaleDateString("en-PH", {
     month: "long",
     day: "numeric",
@@ -99,7 +94,6 @@ function AdminDashboard() {
     return () => clearInterval(timer);
   }, []);
 
-  // -- Data fetching ---------------------------------------------------------
   useEffect(() => {
     const fetchStats = async () => {
       setLoadingStats(true);
@@ -151,11 +145,9 @@ function AdminDashboard() {
       }
     };
 
-    // Fire all three in parallel; each handles its own error independently.
     Promise.allSettled([fetchStats(), fetchAssetTypes(), fetchActivities()]);
   }, []);
 
-  // -- Render ----------------------------------------------------------------
   return (
     <div className="Admin-dashboard">
       <NavigationBar />
@@ -205,7 +197,7 @@ function AdminDashboard() {
               </div>
             </div>
 
-            {/* Bar graph — receives data as a prop, no internal fetch */}
+            {/* Bar graph - receives data as a prop, no internal fetch */}
             <div className="chart-section">
               <BarGraph
                 data={assetTypes}

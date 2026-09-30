@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
 import { Alert } from "@mui/material";
 import BackIcon from "@mui/icons-material/ArrowBackRounded";
 
@@ -10,69 +9,36 @@ import api from "../api.js";
 import { formatDateTime } from "../utils/DateUtil.jsx";
 import "../styles/AdminAddAssetRecord.css";
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
 const INITIAL_WORKSTATION = {
-  // → full_workstation: employee_id (resolved server-side from these two)
   assigned_user: "",
   employee_number: "",
-  // → employees: team_id (resolved server-side)
   team: "",
-  // → employees: location_id (resolved server-side)
   location: "",
-  // → full_workstation: device_category_id (resolved server-side)
   device_category: "",
-  // → full_workstation: device_name
   device_name: "",
-  // → full_workstation: model
   model: "",
-  // → full_workstation: status_id (resolved server-side)
   device_status: "Active",
-  // → full_workstation: supplier
   supplier: "",
-  // → full_workstation: date_assigned
   date_assigned: "",
-  // → full_workstation: notes
   notes: "",
-  // → full_workstation: accountability_form (stored as BYTEA; handled separately)
   accountability_form: "",
-  // → full_workstation: memory / motherboard / storage
   memory: "",
   motherboard: "",
   storage: "",
 };
 
-// Each peripheral maps to one row in `assets` + one row in `workstation_assets`
 const INITIAL_PERIPHERAL = (role) => ({
-  // asset_role → workstation_assets.asset_role
   asset_role: role,
-  // asset_type_id → assets.asset_type_id  (resolved server-side from asset_type_name)
   asset_type_name: role,
-  // asset_code → assets.asset_code  (generated server-side)
   asset_code: "",
-  // serial_number → assets.serial_number
   serial_number: "",
-  // asset_name → assets.asset_name
   asset_name: "",
-  // status_id → assets.status_id  (resolved server-side)
   status: "Active",
-  // warranty_status_id → assets.warranty_status_id  (resolved server-side)
   warranty_status: "Valid",
-  // warranty_expiry_date → assets.warranty_expiry_date
   warranty_expiry_date: "",
 });
 
-// Standard peripheral roles — always present (processor lives in hardware tab)
-const STANDARD_PERIPHERAL_ROLES = [
-  "Monitor 1",
-  "Monitor 2",
-  "Keyboard",
-  "Mouse",
-  "Headset",
-  "Webcam",
-];
+const STANDARD_PERIPHERAL_ROLES = ["Monitor 1", "Monitor 2", "Keyboard", "Mouse", "Headset", "Webcam"];
 
 const ROLE_TO_ASSET_TYPE_NAME = {
   "Processor": "Processor (CPU)",
@@ -90,16 +56,7 @@ const INITIAL_STANDARD_PERIPHERALS = () =>
     STANDARD_PERIPHERAL_ROLES.map((role) => [role, INITIAL_PERIPHERAL(role)])
   );
 
-
-// PeripheralCard — defined OUTSIDE the component so its identity is stable
-// across re-renders. Defining it inside would cause React to treat it as a
-// brand-new component type on every state change, unmounting and remounting
-// the card (and losing input focus) after each keystroke.
-// ---------------------------------------------------------------------------
-
-// ── Reusable peripheral card ───────────────────────────────────────────────
-
-const PeripheralCard = ({ title, data, onChange }) => (
+const peripheralCard = ({ title, data, onChange }) => (
   <div className="Peripheral-card">
     <div className="Peripheral-card-header">
       <h4 className="Peripheral-card-title">{title}</h4>
@@ -197,38 +154,23 @@ const PeripheralCard = ({ title, data, onChange }) => (
   </div>
 );
 
-
-
 // ---------------------------------------------------------------------------
-// Component
+// Main component
 // ---------------------------------------------------------------------------
 
 function AdminAddAssetRecord() {
   const navigate = useNavigate();
-
-  // ── State ──────────────────────────────────────────────────────────────────
-
   const [activeTab, setActiveTab] = useState("basic");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // full_workstation fields
+
   const [workstation, setWorkstation] = useState(INITIAL_WORKSTATION);
-
-  // Processor asset — one row in `assets`, one row in `workstation_assets`
-  // asset_role = "Processor"
   const [processor, setProcessor] = useState(INITIAL_PERIPHERAL("Processor"));
-
-  // Standard peripherals: { "Monitor 1": {...}, "Monitor 2": {...}, ... }
   const [peripherals, setPeripherals] = useState(INITIAL_STANDARD_PERIPHERALS());
-
-  // Dynamic "other" peripherals — each maps to one `assets` row
   const [otherPeripherals, setOtherPeripherals] = useState([]);
-
   // Asset types for the "other peripheral" type dropdown
   const [assetTypes, setAssetTypes] = useState([]);
-
-  // ── Fetch asset types on mount ─────────────────────────────────────────────
 
   useEffect(() => {
     const fetchAssetTypes = async () => {
@@ -241,8 +183,6 @@ function AdminAddAssetRecord() {
     };
     fetchAssetTypes();
   }, []);
-
-  // ── Generic change handlers ────────────────────────────────────────────────
 
   const handleWorkstationChange = (e) => {
     const { name, value } = e.target;
@@ -260,8 +200,6 @@ function AdminAddAssetRecord() {
       [role]: { ...prev[role], [field]: value },
     }));
   };
-
-  // ── Other peripherals ──────────────────────────────────────────────────────
 
   const handleAddOtherPeripheral = () => {
     setOtherPeripherals((prev) => [
@@ -288,7 +226,6 @@ function AdminAddAssetRecord() {
     );
   };
 
-  // Called on blur/Enter of the type input — resolves asset type only
   const handleOtherPeripheralTypeBlur = async (id, typeName) => {
     if (!typeName?.trim()) {
       setOtherPeripherals((prev) =>
@@ -349,8 +286,6 @@ function AdminAddAssetRecord() {
     );
   };
 
-  // ── Clear form ─────────────────────────────────────────────────────────────
-
   const handleClearForm = () => {
     if (
       window.confirm("Are you sure you want to clear the form? This action cannot be undone.")
@@ -363,13 +298,11 @@ function AdminAddAssetRecord() {
     }
   };
 
-  // ── Submit ─────────────────────────────────────────────────────────────────
   const handleSubmitRecord = async () => {
     setLoading(true);
     setError("");
 
     try {
-      // ── 1. Validate ────────────────────────────────────────────────────────
       const requiredFields = [
         { value: workstation.device_category, label: "Device Category" },
         { value: workstation.device_status, label: "Device Status" },
@@ -381,8 +314,6 @@ function AdminAddAssetRecord() {
         return;
       }
 
-      // ── 2. Build asset list ────────────────────────────────────────────────
-      // Only create assets for workstation devices when the user typed data.
       const isWorkstation = workstation.device_category === "Workstation";
       const assetPayload = [];
 
@@ -404,9 +335,6 @@ function AdminAddAssetRecord() {
           if (hasPeripheralInput(p)) {
             assetPayload.push({
               asset_role: role,
-              // Use the canonical type name, not the role string, so
-              // "Monitor 1" and "Monitor 2" both resolve to the existing
-              // "Monitor" asset type without triggering a duplicate code error.
               asset_type_name: ROLE_TO_ASSET_TYPE_NAME[role] ?? role,
               serial_number: p.serial_number || null,
               asset_name: p.asset_name || null,
@@ -434,8 +362,6 @@ function AdminAddAssetRecord() {
         });
       }
 
-      // ── 3. POST /api/assets ────────────────────────────────────────────────
-      // Creates asset rows only if there are any valid inputs and only for workstations.
       let createdAssets = [];
       if (assetPayload.length > 0) {
         try {
@@ -452,16 +378,13 @@ function AdminAddAssetRecord() {
         }
       }
 
-      // ── 4. POST /api/workstations ──────────────────────────────────────────
       const workstationPayload = {
-        // Employee / assignment info (server resolves employee_id)
         assigned_user: workstation.assigned_user || null,
         employee_number: workstation.employee_number || null,
         team: workstation.team || null,
         location: workstation.location || null,
         date_assigned: workstation.date_assigned || null,
 
-        // full_workstation columns
         device_category: workstation.device_category,
         device_name: workstation.device_name,
         model: workstation.model || null,
@@ -470,13 +393,10 @@ function AdminAddAssetRecord() {
         notes: workstation.notes || null,
         accountability_form: workstation.accountability_form || null,
 
-        // Hardware specs
         memory: workstation.memory || null,
         motherboard: workstation.motherboard || null,
         storage: workstation.storage || null,
 
-        // Asset list — backend inserts workstation_assets rows from this.
-        // For non-Workstation categories, this list remains empty.
         assets: createdAssets.map(({ asset_id, asset_role }) => ({
           asset_id,
           asset_role,
@@ -506,8 +426,6 @@ function AdminAddAssetRecord() {
       navigate("/admin/assets");
     }
   };
-
-  // ── Tab renderers ──────────────────────────────────────────────────────────
 
   const renderBasicInfoTab = () => (
     <div className="Tab-panel">
@@ -821,7 +739,7 @@ function AdminAddAssetRecord() {
           {otherPeripherals.map((peripheral) => (
             <div key={peripheral.id} className="Peripheral-card">
               <div className="Peripheral-card-body">
-                {/* Type input — blurring triggers get-or-create*/}
+                
                 <div className="Field-group">
                   <label className="Form-label" style={{ fontSize: "13px" }}>
                     Asset/Peripheral Type
@@ -1041,8 +959,6 @@ function AdminAddAssetRecord() {
       </div>
     </div>
   );
-
-  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <div className="New-asset-record">

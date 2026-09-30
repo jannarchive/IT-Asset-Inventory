@@ -38,47 +38,30 @@ import { getFullWorkstationColumns, getAssetViewColumns } from "./DataGridColumn
 import api from "../api.js";
 import "../styles/AdminAssetsOverview.css";
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
 const DEVICE_CATEGORIES = ["Workstation", "Laptop", "Mobile Phone", "Printer", "Network Equipment"];
 const DEVICE_STATUSES = ["Active", "In Storage", "Defective", "Out for Repair", "Retired"];
 const ASSET_STATUSES = ["Active", "In Storage", "Defective", "Out for Repair", "Retired"];
 const WARRANTY_STATUSES = ["Valid", "Expired"];
 const TEAMS = ["Operations and Management", "EAS", "AWX"];
 const LOCATIONS = ["Admin/OPS", "WFH"];
-
-// Standard peripheral roles — shown as fixed tabs in the peripheral section
 const STANDARD_ROLES = ["Processor", "Monitor 1", "Monitor 2", "Keyboard", "Mouse", "Headset", "Webcam"];
-
 
 const sanitizeTextField = (v) => {
   if (v === null || v === undefined) return "";
-  if (typeof v === "object") return ""; // binary / unexpected object — not renderable
+  if (typeof v === "object") return ""; 
   return String(v);
 };
 
-
-/**
- * Return a display-safe value for a read-only field.
- * Guards against plain objects (e.g. Buffer { type, data } from pg driver,
- * or file-metadata objects) being passed as React children, which throws
- * "Objects are not valid as a React child".
- */
-const displayVal = (v) => {
-  if (v === null || v === undefined || v === "") return "—";
-  if (typeof v === "object") {
-    // Buffer from pg bytea column: { type: 'Buffer', data: [...] }
-    if (v.type === "Buffer" && Array.isArray(v.data)) return "[binary data]";
-    // Any other plain object — surface its JSON so it's at least visible in dev
-    try { return JSON.stringify(v); } catch { return "[object]"; }
+const displayValue = (value) => {
+  if (value === null || value === undefined || value === "") return "—";
+  if (typeof value === "object") {
+    if (value.type === "Buffer" && Array.isArray(v.data)) return "[binary data]";
+    try { return JSON.stringify(value); } catch { return "[object]"; }
   }
-  return v;
+  return value;
 };
 
-/** Render a labelled read-only row */
-const ViewRow = ({ label, value }) => (
+const viewRow = ({ label, value }) => (
   <Box sx={{ display: "flex", gap: 1, py: 0.4 }}>
     <Typography variant="body2" sx={{ fontWeight: 600, minWidth: 200, color: "text.secondary" }}>
       {label}
@@ -86,10 +69,6 @@ const ViewRow = ({ label, value }) => (
     <Typography variant="body2">{displayVal(value)}</Typography>
   </Box>
 );
-
-// ---------------------------------------------------------------------------
-// Custom Toolbar — defined OUTSIDE the parent for a stable reference.
-// ---------------------------------------------------------------------------
 
 function CustomToolbar({ selectedIds = [], rows = [], activeTab, onAdd, onEdit, onView, onDelete }) {
   const isWorkstation = activeTab === "workstation";
@@ -146,7 +125,7 @@ function CustomToolbar({ selectedIds = [], rows = [], activeTab, onAdd, onEdit, 
 }
 
 // ---------------------------------------------------------------------------
-// ViewDialog — read-only, all workstation fields neatly sectioned
+// ViewDialog - read-only, all workstation fields neatly sectioned
 // ---------------------------------------------------------------------------
 
 function ViewDialog({ open, onClose, data }) {
@@ -173,7 +152,6 @@ function ViewDialog({ open, onClose, data }) {
 
   if (!data) return null;
 
-  // Build a lookup map: asset_role → asset object for quick access
   const assetByRole = {};
   assets.forEach((a) => { assetByRole[a.asset_role] = a; });
 
@@ -277,7 +255,7 @@ function ViewDialog({ open, onClose, data }) {
 }
 
 // ---------------------------------------------------------------------------
-// EditDialog — tabbed, editable, saves full_workstation + all assets
+// EditDialog - tabbed, editable, saves full_workstation and all assets
 // ---------------------------------------------------------------------------
 
 const STANDARD_ROLE_SET = new Set(STANDARD_ROLES);
@@ -347,26 +325,13 @@ const AssetCard = ({ asset, onAssetChange }) => (
   </Box>
 );
 
-// ---------------------------------------------------------------------------
-// EditDialog — tabbed, editable, saves full_workstation + all assets
-// ---------------------------------------------------------------------------
-
 function EditDialog({ open, onClose, data, onSaved }) {
-  // ── Local state ────────────────────────────────────────────────────────────
-
   const [tab, setTab] = useState(0);
   const [saving, setSaving] = useState(false);
   const [loadingAssets, setLoadingAssets] = useState(false);
   const [error, setError] = useState("");
-
-  // Workstation-level fields
   const [ws, setWs] = useState({});
-
-  // All assets for this device: [{ asset_id, asset_role, asset_name, serial_number,
-  //   status, asset_code, asset_type_name }]
   const [assets, setAssets] = useState([]);
-
-  // ── Load data when dialog opens ────────────────────────────────────────────
 
   useEffect(() => {
     if (!open || !data) return;
@@ -390,7 +355,6 @@ function EditDialog({ open, onClose, data, onSaved }) {
         const day = String(date.getDate()).padStart(2, "0");
         return `${year}-${month}-${day}`;
       }
-
       return "";
     };
 
@@ -428,8 +392,6 @@ function EditDialog({ open, onClose, data, onSaved }) {
     fetchAssets();
   }, [open, data]);
 
-  // ── Field change helpers ───────────────────────────────────────────────────
-
   const handleWsChange = useCallback((field, value) =>
     setWs((prev) => ({ ...prev, [field]: value })), []);
 
@@ -437,8 +399,6 @@ function EditDialog({ open, onClose, data, onSaved }) {
     setAssets((prev) =>
       prev.map((a) => (a.asset_id === assetId ? { ...a, [field]: value } : a))
     ), []);
-
-  // ── Save ───────────────────────────────────────────────────────────────────
 
   const handleSave = async () => {
     setSaving(true);
@@ -467,12 +427,9 @@ function EditDialog({ open, onClose, data, onSaved }) {
 
   if (!data) return null;
 
-  // ── Partitioned assets ─────────────────────────────────────────────────────
-
+  // Partitioned assets
   const standardAssets = assets.filter((a) => STANDARD_ROLE_SET.has(a.asset_role));
   const otherAssets = assets.filter((a) => !STANDARD_ROLE_SET.has(a.asset_role));
-
-  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -490,7 +447,7 @@ function EditDialog({ open, onClose, data, onSaved }) {
       <DialogContent dividers sx={{ minHeight: 420 }}>
         {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError("")}>{error}</Alert>}
 
-        {/* ── Tab 0: Basic Info ─────────────────────────────────────────── */}
+        {/* Tab 0: Basic Info */}
         {tab === 0 && (
           <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
             <Typography variant="subtitle2" sx={{ gridColumn: "1/-1", fontWeight: 700, mb: 0.5 }}>Employee Information</Typography>
@@ -499,7 +456,7 @@ function EditDialog({ open, onClose, data, onSaved }) {
             <WsSelectField label="Team" field="team" ws={ws} onWsChange={handleWsChange} options={TEAMS} />
             <WsSelectField label="Location" field="location" ws={ws} onWsChange={handleWsChange} options={LOCATIONS} />
             <WsTextField label="Date Assigned" field="date_assigned" ws={ws} onWsChange={handleWsChange} type="date" />
-            <Box /> {/* spacer */}
+            <Box /> 
 
             <Typography variant="subtitle2" sx={{ gridColumn: "1/-1", fontWeight: 700, mt: 1, mb: 0.5 }}>Device Information</Typography>
             <WsSelectField label="Device Category" field="device_category" ws={ws} onWsChange={handleWsChange} options={DEVICE_CATEGORIES} />
@@ -517,7 +474,7 @@ function EditDialog({ open, onClose, data, onSaved }) {
           </Box>
         )}
 
-        {/* ── Tab 1: Hardware ───────────────────────────────────────────── */}
+        {/* Tab 1: Hardware */}
         {tab === 1 && (
           <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
             <WsTextField label="Memory" field="memory" ws={ws} onWsChange={handleWsChange} />
@@ -526,7 +483,7 @@ function EditDialog({ open, onClose, data, onSaved }) {
           </Box>
         )}
 
-        {/* ── Tab 2: Peripherals (standard roles) ───────────────────────── */}
+        {/* Tab 2: Peripherals (standard roles) */}
         {tab === 2 && (
           <Box>
             {loadingAssets ? (
@@ -543,7 +500,7 @@ function EditDialog({ open, onClose, data, onSaved }) {
           </Box>
         )}
 
-        {/* ── Tab 3: Other Peripherals ──────────────────────────────────── */}
+        {/* Tab 3: Other Peripherals */}
         {tab === 3 && (
           <Box>
             {loadingAssets ? (
@@ -583,9 +540,6 @@ function EditDialog({ open, onClose, data, onSaved }) {
 
 function AdminAssetsOverview() {
   const navigate = useNavigate();
-
-  // ── State ──────────────────────────────────────────────────────────────────
-
   const [activeTab, setActiveTab] = useState("workstation");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -601,7 +555,6 @@ function AdminAssetsOverview() {
   const [viewDialog, setViewDialog] = useState({ open: false, data: null });
   const [editDialog, setEditDialog] = useState({ open: false, data: null });
 
-  // ── Fetch helpers ──────────────────────────────────────────────────────────
 
   const fetchWorkstations = useCallback(async () => {
     setLoading(true);
@@ -740,8 +693,7 @@ function AdminAssetsOverview() {
     else fetchAssets();
   }, [activeTab, fetchWorkstations, fetchAssets]);
 
-  // ── Toolbar callbacks (stable references) ─────────────────────────────────
-
+  // Toolbar callbacks 
   const handleToolbarAdd = useCallback(() => navigate("/admin/assets/new"), [navigate]);
   const handleToolbarView = useCallback((row) => setViewDialog({ open: true, data: row }), []);
   const handleToolbarEdit = useCallback((row) => setEditDialog({ open: true, data: row }), []);
@@ -767,12 +719,9 @@ function AdminAssetsOverview() {
     handleDeleteWorkstations(ids);
   }, [handleDeleteWorkstations]);
 
-  // ── Column definitions ─────────────────────────────────────────────────────
-
+  // Column definitions
   const fullWorkstationColumns = getFullWorkstationColumns(getStatusColor);
   const assetViewColumns = getAssetViewColumns(getWarrantyStatusColor);
-
-  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <div className="Assets-overview">

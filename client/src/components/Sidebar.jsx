@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
-
-import '../styles/Sidebar.css';
 import { SidebarData } from './SidebarData';
+import '../styles/Sidebar.css';
 
 function Sidebar() {
     const navigate = useNavigate();

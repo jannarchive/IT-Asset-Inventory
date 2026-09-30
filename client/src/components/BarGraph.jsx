@@ -9,21 +9,9 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+
 import "../styles/BarGraph.css";
 
-/**
- * BarGraph — presentational component only.
- *
- * Data is fetched by AdminDashboard and passed down via props so that:
- *  - The auth token is guaranteed to be attached.
- *  - There is a single loading state for the whole dashboard.
- *  - This component stays simple and testable in isolation.
- *
- * Props:
- *  @param {Array}   data    - Array of { asset_type_name: string, total: number }
- *  @param {boolean} loading - Whether the parent is still fetching
- *  @param {string}  error   - Error message from the parent fetch, if any
- */
 function BarGraph({ data = [], loading = false, error = null }) {
   if (loading) {
     return <div className="Bar-graph-container">Loading chart…</div>;

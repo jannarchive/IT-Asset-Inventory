@@ -1,10 +1,7 @@
 import Dashboard from "../models/Dashboard.js";
 
 class DashboardController {
-  /**
-   * GET /api/dashboard/stats
-   * Returns totals for the four status cards.
-   */
+  // GET /api/dashboard/stats
   static async getDashboardStats(req, res) {
     try {
       const data = await Dashboard.getDashboardStats();
@@ -18,10 +15,8 @@ class DashboardController {
     }
   }
 
-  /**
-   * GET /api/dashboard/asset-types
-   * Returns asset type names with their asset counts (used by the bar graph).
-   */
+  // GET /api/dashboard/asset-types
+  // Returns asset type names with their asset counts (used by the bar graph).
   static async getAssetTypesCounts(req, res) {
     try {
       const data = await Dashboard.getAssetTypesCounts();
@@ -35,11 +30,9 @@ class DashboardController {
     }
   }
 
-  /**
-   * GET /api/dashboard/recent-activities?limit=15
-   * Returns the most recent activity log entries.
-   * Query param `limit` must be an integer between 1 and 100.
-   */
+  // GET /api/dashboard/recent-activities?limit=15
+  // Returns the most recent activity log entries.
+
   static async getRecentActivities(req, res) {
     const limit = req.query.limit ? parseInt(req.query.limit, 10) : 15;
 
@@ -62,10 +55,8 @@ class DashboardController {
     }
   }
 
-  /**
-   * GET /api/dashboard/workstations
-   * Returns all workstations with complete device and assignment information.
-   */
+  // GET /api/dashboard/workstations
+  // Returns all workstations with complete device and assignment information.
   static async getAllWorkstations(req, res) {
     try {
       const data = await Dashboard.getAllWorkstations();

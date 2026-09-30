@@ -23,6 +23,7 @@ import {
 } from "@mui/material";
 import PdfIcon from "@mui/icons-material/PictureAsPdf";
 import RefreshIcon from "@mui/icons-material/Refresh";
+
 import logo from '../assets/LinkedBPO-logo.png';
 import NavigationBar from "../components/NavigationBar.jsx";
 import Sidebar from "../components/Sidebar.jsx";
@@ -30,7 +31,6 @@ import { formatDate, formatDateTime } from "../utils/DateUtil.jsx";
 import api from "../api.js";
 import "../styles/AdminReports.css";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 const MONTHS = [
     "January", "February", "March", "April",
@@ -51,7 +51,9 @@ const INITIAL_STATS = {
     incompleteWorkstations: 0,
 };
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
 
 function AdminReports() {
     const now = new Date();
@@ -65,7 +67,6 @@ function AdminReports() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
-    // ── Data fetching ──────────────────────────────────────────────────────────
 
     const fetchReportData = useCallback(async () => {
         setLoading(true);
@@ -97,12 +98,8 @@ function AdminReports() {
         fetchReportData();
     }, [fetchReportData]);
 
-    // ── Derived labels ─────────────────────────────────────────────────────────
-
     const reportMonthLabel = `${MONTHS[selectedMonth - 1]} ${selectedYear}`;
     const reportGeneratedOn = formatDateTime(new Date().toISOString());
-
-    // ── Memoised data ──────────────────────────────────────────────────────────
 
     const periodAssets = useMemo(
         () =>
@@ -178,12 +175,9 @@ function AdminReports() {
         [activities, selectedMonth, selectedYear]
     );
 
-    // ── Handlers ───────────────────────────────────────────────────────────────
-
-    // Aliased so the button's onClick stays semantically clear
     const handleGenerateReport = fetchReportData;
 
-    // ── PDF generation ─────────────────────────────────────────────────────────
+    // PDF generation 
 
     const PDF_PAGE_WIDTH = 210;
 
@@ -384,7 +378,6 @@ function AdminReports() {
         doc.save(`IT-Asset-Inventory-${reportMonthLabel.replace(/\s+/g, "-")}.pdf`);
     }, [activityLog, chartData, reportGeneratedOn, reportMonthLabel, summaryItems, warrantyAlerts]);
 
-    // ── Render ─────────────────────────────────────────────────────────────────
 
     return (
         <div className="Reports">

@@ -44,10 +44,7 @@ class Dashboard {
     };
   }
 
-  /**
-   * Returns each asset type with its current asset count.
-   * Used by the bar graph on the dashboard.
-   */
+  // Returns each asset type with its current asset count. Used by the bar graph on the dashboard.
   static async getAssetTypesCounts() {
     const query = `
       SELECT
@@ -73,10 +70,8 @@ class Dashboard {
     return result.rows;
   }
 
-  /**
-   * Returns the most recent activity log entries, newest first.
-   * @param {number} limit - Maximum rows to return (default 15, max 100).
-   */
+  // Returns the most recent activity log entries, newest first.
+
   static async getRecentActivities(limit = 15) {
     const query = `
       SELECT
@@ -97,10 +92,7 @@ class Dashboard {
     return result.rows;
   }
 
-  /**
-   * Retrieves all workstations with complete device and assignment information.
-   * Joins with device category, employee, team, status, and asset information.
-   */
+  // Retrieves all workstations with complete device and assignment information
   static async getAllWorkstations() {
     const query = `
       SELECT

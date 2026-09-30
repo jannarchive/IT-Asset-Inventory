@@ -8,7 +8,7 @@ const router = express.Router();
 router.use(authenticateToken);
 
 // ---------------------------------------------------------------------------
-// Static / named routes  — MUST come before /:id to avoid param capture
+// Static/named routes
 // ---------------------------------------------------------------------------
 
 // GET /api/assets
@@ -30,7 +30,7 @@ router.post("/get-or-create-type", AssetController.getOrCreateAssetType);
 router.post("/generate-codes", AssetController.generateAssetCodes);
 
 // ---------------------------------------------------------------------------
-// Parameterised routes — after all static routes
+// Parameterised routes - after all static routes
 // ---------------------------------------------------------------------------
 
 // GET /api/assets/:id

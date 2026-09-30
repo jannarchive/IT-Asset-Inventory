@@ -1,9 +1,3 @@
-/**
- * Full Workstation View Column Definitions
- * 
- * @param {Function} getStatusColor - Function to get color for status values
- * @returns {Array} Array of column definition objects for DataGrid
- */
 export const getFullWorkstationColumns = (getStatusColor) => [
     {
         field: "device_id",

@@ -7,9 +7,7 @@ const parseId = (value) => {
   return Number.isInteger(id) && id > 0 ? id : null;
 };
 
-// ---------------------------------------------------------------------------
 // GET /api/workstations
-// ---------------------------------------------------------------------------
 export const getAllWorkstations = async (req, res) => {
   try {
     const workstations = await Workstation.getAllWorkstations();
@@ -20,9 +18,7 @@ export const getAllWorkstations = async (req, res) => {
   }
 };
 
-// ---------------------------------------------------------------------------
 // GET /api/workstations/:id
-// ---------------------------------------------------------------------------
 export const getWorkstationById = async (req, res) => {
   try {
     const id = parseId(req.params.id);
@@ -38,29 +34,17 @@ export const getWorkstationById = async (req, res) => {
   }
 };
 
-// ---------------------------------------------------------------------------
 // POST /api/workstations
-//
-// Expected body (from AdminAddAssetRecord.jsx):
-// {
-//   device_category, device_name, model, device_status,
-//   warranty_status, warranty_expiry_date, supplier,
-//   date_assigned, notes, accountability_form,
-//   assigned_user, employee_number, team, location,
-//   memory, motherboard, storage,
-//   assets: [{ asset_id, asset_role }]   ← created by POST /api/assets first
-// }
-// ---------------------------------------------------------------------------
 export const createWorkstation = async (req, res) => {
   try {
     const {
       device_category,
       device_name,
-      model,              // was silently dropped in the previous version
+      model,              
       assigned_user,
       employee_number,
-      team,               // was never destructured/forwarded
-      location,           // was never destructured/forwarded
+      team,               
+      location,           
       date_assigned,
       device_status,
       warranty_status,
@@ -74,7 +58,6 @@ export const createWorkstation = async (req, res) => {
       assets,
     } = req.body;
 
-    // Only device_category and device_status are truly required
     if (!device_category || !device_status) {
       return res.status(400).json({
         error: "Device category and Device status are required",
@@ -112,11 +95,8 @@ export const createWorkstation = async (req, res) => {
   }
 };
 
-// ---------------------------------------------------------------------------
 // PUT /api/workstations/:id
-// Updates full_workstation columns only. Peripheral changes go through
-// workstation_assets endpoints.
-// ---------------------------------------------------------------------------
+// Updates full_workstation columns only. Peripheral changes go through workstation_assets endpoints
 export const updateWorkstation = async (req, res) => {
   try {
     const id = parseId(req.params.id);
@@ -137,10 +117,7 @@ export const updateWorkstation = async (req, res) => {
   }
 };
 
-// ---------------------------------------------------------------------------
 // DELETE /api/workstations/:id
-// workstation_assets rows cascade-delete automatically via ON DELETE CASCADE.
-// ---------------------------------------------------------------------------
 export const deleteWorkstation = async (req, res) => {
   try {
     const id = parseId(req.params.id);
@@ -157,11 +134,8 @@ export const deleteWorkstation = async (req, res) => {
   }
 };
 
-// ---------------------------------------------------------------------------
 // POST /api/workstations/generate-codes
-// Generates asset codes by incrementing sequences in the DB.
-// Must only be called once per record at submit time (not while browsing tabs).
-// ---------------------------------------------------------------------------
+// Generates asset codes by incrementing sequences in the database
 export const generateAssetCodes = async (req, res) => {
   try {
     const { assetTypes } = req.body;
@@ -177,12 +151,10 @@ export const generateAssetCodes = async (req, res) => {
     res.status(500).json({ error: "Failed to generate asset codes" });
   }
 };
-// ---------------------------------------------------------------------------
+
 // GET /api/workstations/:id/assets
 // Returns all active assets linked to a workstation (including "other"
-// peripherals not captured in the pivoted Full Workstation View columns).
-// Used by the Edit dialog to populate the Peripherals and Other Peripherals tabs.
-// ---------------------------------------------------------------------------
+// peripherals). Used by the Edit dialog to populate the Peripherals and Other Peripherals tabs
 export const getWorkstationAssets = async (req, res) => {
   try {
     const id = parseId(req.params.id);
@@ -196,12 +168,8 @@ export const getWorkstationAssets = async (req, res) => {
   }
 };
 
-// ---------------------------------------------------------------------------
 // PUT /api/workstations/:id/full
-// Saves full_workstation + all asset rows in one transaction.
-// Body: { ...workstationFields, assets: [{ asset_id, asset_name,
-//         serial_number, status, warranty_status, warranty_expiry_date }] }
-// ---------------------------------------------------------------------------
+// Saves full_workstation and all asset rows in one transaction.
 export const updateWorkstationFull = async (req, res) => {
   try {
     const id = parseId(req.params.id);
