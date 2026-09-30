@@ -7,11 +7,13 @@
   --color-text-gray: #767272;
   --color-border: #aeacac;
 
+  /* Fluid spacing scale */
   --space-xs: clamp(4px, 0.5vw, 8px);
   --space-sm: clamp(8px, 1vw, 16px);
   --space-md: clamp(16px, 2vw, 28px);
   --space-lg: clamp(24px, 3vw, 48px);
   --space-xl: clamp(40px, 6vw, 80px);
+  --sidebar-content-gap: clamp(1rem, 2vw, 2rem);
 }
 
 /* ==========================================================
@@ -67,16 +69,14 @@
 }
 
 .Sidebar-placeholder {
-  width: 20%;
-  min-width: 250px;
-  flex-shrink: 0;
+  flex: 0 0 var(--sidebar-width);
 }
 
 .Reports .content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 90px 30px 30px 0;
+  padding: 90px 30px 30px var(--sidebar-content-gap);
   background-color: var(--color-white);
   overflow-y: auto;
   min-width: 0;
@@ -282,11 +282,6 @@
    ========================================================== */
 
 @media (max-width: 1024px) {
-  .Sidebar-placeholder {
-    width: 260px;
-    min-width: 260px;
-  }
-
   .Reports .content {
     padding: 90px var(--space-md) var(--space-md);
   }
@@ -301,10 +296,6 @@
    ========================================================== */
 
 @media (max-width: 768px) {
-  .Sidebar-placeholder {
-    display: none;
-  }
-
   .Reports .content {
     padding: 80px var(--space-sm) var(--space-sm);
   }

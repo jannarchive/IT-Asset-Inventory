@@ -55,18 +55,18 @@ const sanitizeTextField = (v) => {
 const displayValue = (value) => {
   if (value === null || value === undefined || value === "") return "—";
   if (typeof value === "object") {
-    if (value.type === "Buffer" && Array.isArray(v.data)) return "[binary data]";
+    if (value.type === "Buffer" && Array.isArray(value.data)) return "[binary data]";
     try { return JSON.stringify(value); } catch { return "[object]"; }
   }
   return value;
 };
 
-const viewRow = ({ label, value }) => (
+const ViewRow = ({ label, value }) => (
   <Box sx={{ display: "flex", gap: 1, py: 0.4 }}>
     <Typography variant="body2" sx={{ fontWeight: 600, minWidth: 200, color: "text.secondary" }}>
       {label}
     </Typography>
-    <Typography variant="body2">{displayVal(value)}</Typography>
+    <Typography variant="body2">{displayValue(value)}</Typography>
   </Box>
 );
 

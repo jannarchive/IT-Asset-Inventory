@@ -15,6 +15,7 @@
   --space-md: clamp(16px, 2vw, 28px);
   --space-lg: clamp(24px, 3vw, 48px);
   --space-xl: clamp(40px, 6vw, 80px);
+  --sidebar-content-gap: clamp(1rem, 2vw, 2rem);
 }
 
 /* ============================================================
@@ -38,16 +39,14 @@
 }
 
 .Sidebar-placeholder {
-  width: 20%;
-  min-width: 250px;
-  flex-shrink: 0;
+  flex: 0 0 var(--sidebar-width);
 }
 
 .Assets-overview .content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 90px 30px 30px 0;
+  padding: 90px 30px 30px var(--sidebar-content-gap);
   background-color: var(--color-white);
   overflow-y: auto;
 }

@@ -8,6 +8,9 @@
   --color-border: #aeacac;
 
   --font-base: "Poppins", sans-serif;
+  --sidebar-width: clamp(13rem, 15vw, 15rem);
+  --sidebar-compact-width: 4.5rem;
+  --app-header-height: 60px;
 
   /* Fluid spacing scale */
   --space-xs: clamp(4px, 0.5vw, 8px);
@@ -26,118 +29,89 @@
 /* Sidebar Container */
 
 .Sidebar {
-  width: clamp(220px, 15vw, 280px);
-  min-height: 100vh;
-
+  width: var(--sidebar-width);
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
   position: fixed;
   top: 0;
   left: 0;
-
   display: flex;
   flex-direction: column;
   align-items: stretch;
-
   background-color: #fffffc;
   border-right: 1px solid var(--color-border);
-
-  padding-top: clamp(70px, 8vh, 90px);
-  padding-bottom: var(--space-md);
-
+  padding: calc(var(--app-header-height) + var(--space-sm)) 0
+    max(var(--space-sm), env(safe-area-inset-bottom));
   overflow-y: auto;
   overflow-x: hidden;
-
-  transition: all 0.3s ease;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #b8c4ce transparent;
+  transition: width 0.2s ease;
   z-index: 100;
 }
-
-/* Sidebar Header */
 
 .Sidebar h2 {
   color: var(--color-text-gray);
   font-family: var(--font-base);
-  font-size: clamp(15px, 2.5vw, 20px);
+  font-size: 0.999rem;
   font-weight: 500;
-
-  margin: 0 20px var(--space-sm);
+  margin: 0 0 var(--space-sm);
+  padding: 0 1.25rem;
 }
-
-/* Sidebar List */
 
 .SidebarList {
   width: 100%;
-
   display: flex;
   flex-direction: column;
-  gap: 6px;
-
+  gap: 0.375rem;
   list-style: none;
-
   padding: 0;
   margin: 0;
 }
 
-/* Sidebar Rows */
-
 .SidebarList .row {
-  width: calc(100% - 20px);
-  min-height: 52px;
-
-  margin: 0 auto;
-  padding: 0 12px;
-
+  width: calc(100% - 1rem);
+  min-height: 3rem;
+  margin: 0 0.5rem;
+  padding: 0 0.75rem;
   display: flex;
   align-items: center;
-
-  border-radius: 10px;
-
+  border-radius: 0.375rem;
   color: var(--color-text-gray);
   font-family: var(--font-base);
-  font-size: clamp(15px, 2.5vw, 20px);
+  font-size: 0.9375rem;
   font-weight: 600;
-
-  transition: all 0.2s ease;
-}
-
-.SidebarList .row:hover {
-  background-color: var(--color-secondary);
-  color: var(--color-primary);
   cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
+.SidebarList .row:hover,
 .SidebarList .row.active {
   background-color: var(--color-secondary);
   color: var(--color-primary);
 }
 
-/* Sidebar Icons and Titles */
-
 .row #icon {
-  width: 50px;
-  min-width: 50px;
-
+  width: 2.5rem;
+  min-width: 2.5rem;
   display: grid;
   place-items: center;
-
-  font-size: clamp(18px, 1.4vw, 24px);
 }
 
 .row #title {
   flex: 1;
+  min-width: 0;
   font-size: inherit;
-
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* === Mobile portrait — up to 480px === */
-
-@media (max-width: 480px) {
-  .Sidebar {
-    width: 65px;
-    align-items: center;
-
-    padding-top: 70px;
+@media (max-width: 54rem) {
+  :root {
+    --sidebar-width: var(--sidebar-compact-width);
   }
 
   .Sidebar h2 {
@@ -146,21 +120,19 @@
 
   .SidebarList {
     align-items: center;
-    gap: 10px;
+    gap: 0.5rem;
   }
 
   .SidebarList .row {
-    width: 50px;
-    min-height: 50px;
-
+    width: calc(100% - 1rem);
+    min-height: 3.25rem;
     justify-content: center;
     padding: 0;
   }
 
   .row #icon {
     width: 100%;
-    min-width: unset;
-    font-size: 20px;
+    min-width: 0;
   }
 
   .row #title {
@@ -168,73 +140,23 @@
   }
 }
 
-/* === Mobile landscape / small tablet — 481–768px === */
-
-@media (min-width: 481px) and (max-width: 768px) {
+@media (max-height: 40rem) {
   .Sidebar {
-    width: 75px;
-    align-items: center;
-
-    padding-top: 75px;
-  }
-
-  .Sidebar h2 {
-    display: none;
+    padding-top: calc(var(--app-header-height) + 0.5rem);
   }
 
   .SidebarList {
-    align-items: center;
+    gap: 0.25rem;
   }
 
   .SidebarList .row {
-    width: 58px;
-
-    justify-content: center;
-    padding: 0;
-  }
-
-  .row #icon {
-    width: 100%;
-    min-width: unset;
-  }
-
-  .row #title {
-    display: none;
+    min-height: 2.75rem;
   }
 }
 
-/* === Tablet — 769–1024px === */
-
-@media (min-width: 769px) and (max-width: 1024px) {
-  .Sidebar {
-    width: 220px;
-  }
-
-  .Sidebar h2 {
-    font-size: 18px;
-  }
-
+@media (prefers-reduced-motion: reduce) {
+  .Sidebar,
   .SidebarList .row {
-    font-size: 15px;
-  }
-}
-
-/* === Small desktop — 1025–1280px === */
-
-@media (min-width: 1025px) and (max-width: 1280px) {
-  .Sidebar {
-    width: 240px;
-  }
-}
-
-/* === Extra-large / wide screens — 1600px+ === */
-
-@media (min-width: 1600px) {
-  .Sidebar {
-    width: 300px;
-  }
-
-  .SidebarList .row {
-    min-height: 58px;
+    transition: none;
   }
 }
