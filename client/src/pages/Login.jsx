@@ -93,6 +93,7 @@ function Login() {
         provider: "google",
         options: {
           redirectTo: window.location.origin,
+          queryParams: {prompt: "select_account"},
         },
       });
 
@@ -133,6 +134,7 @@ function Login() {
             "An error occurred during authentication. Please try again.",
         );
         setLoading(false);
+        await supabase.auth.logout();
       }
     };
 

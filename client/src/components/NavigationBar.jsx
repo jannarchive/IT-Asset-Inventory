@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import Logout from '@mui/icons-material/LogoutOutlined';
+import LogoutIcon from '@mui/icons-material/LogoutOutlined';
 
 import logo from '../assets/LinkedBPO-logo.png';
+import { Logout } from '../lib/Logout';
 import '../styles/NavigationBar.css';
 
 
@@ -25,12 +26,9 @@ function NavigationBar() {
         setShowDropdown(!showDropdown);
     };
 
-    const handleLogout = () => {
-        localStorage.clear();
-        if (
-            window.confirm("Are you sure you want to log out your account?")
-    ) {
-      navigate('/');
+    const handleLogout = async () => {
+    if (window.confirm("Are you sure you want to log out your account?")) {
+        await Logout(navigate);
     }
     };
 
@@ -54,7 +52,7 @@ function NavigationBar() {
                         <p className="Dropdown-name">{adminName}</p>
                         <p className="Dropdown-email">{adminEmail}</p>
                         <button className="Logout-button" onClick={handleLogout}>
-                            <Logout />
+                            <LogoutIcon />
                             <p>Logout</p>
                         </button>
                     </div>
