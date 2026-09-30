@@ -61,6 +61,9 @@ function Login() {
     try {
       const { error: supabaseError } = await supabase.auth.signInWithOAuth({
         provider: "google",
+        options: {
+          redirectTo: window.location.origin,
+        },
       });
 
       if (supabaseError) {
@@ -97,7 +100,7 @@ function Login() {
             // Call backend to issue a JWT token for API access
             // The backend will verify the user is active and return a signed JWT
             const backendResponse = await fetch(
-              `${import.meta.env.VITE_SERVER_URL || "http://localhost:3000"}/api/auth/oauth-login`,
+              `${import.meta.env.VITE_SERVER_URL || "https://it-asset-inventory-server.onrender.com"}/api/auth/oauth-login`,
               {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
