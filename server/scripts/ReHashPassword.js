@@ -2,7 +2,7 @@
 // Detects plaintext passwords in system_users and re-hashes them with bcrypt.
 
 import bcrypt from "bcryptjs";
-import pool from "../config/database.js";
+import pool from "../config/Database.js";
 
 const SALT_ROUNDS = 10; 
 

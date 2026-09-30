@@ -1,6 +1,4 @@
-import { useState } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 
 import "./App.css";
 import Login from "./pages/Login";
@@ -9,8 +7,7 @@ import AdminAssetsOverview from "./pages/AdminAssetsOverview";
 import AdminAddAssetRecord from "./pages/AdminAddAssetRecord";
 import AdminReports from "./pages/AdminReports";
 
-function App() {
-  const NotFound = () => <h1>404 - Not Found</h1>;
+const NotFound = () => <h1>404 - Not Found</h1>;
 
   const router = createBrowserRouter([
     {
@@ -39,6 +36,8 @@ function App() {
       errorElement: <NotFound />,
     },
   ]);
+
+function App() {
 
   return <RouterProvider router={router} />;
 }
