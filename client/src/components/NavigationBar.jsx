@@ -4,7 +4,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/LogoutOutlined';
 
 import logo from '../assets/LinkedBPO-logo.png';
-import { Logout } from '../lib/Logout';
+import { logout } from '../lib/Logout';
 import '../styles/NavigationBar.css';
 
 
@@ -28,7 +28,7 @@ function NavigationBar() {
 
     const handleLogout = async () => {
     if (window.confirm("Are you sure you want to log out your account?")) {
-        await Logout(navigate);
+        await logout(navigate);
     }
     };
 
