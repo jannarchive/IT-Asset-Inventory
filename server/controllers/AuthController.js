@@ -104,19 +104,45 @@ export const logout = (req, res) => {
   res.status(200).json({ message: "Logged out successfully" });
 };
 
-// OAuth Login - after Supabase verifies the user, it issues a backend JWT
-// The frontend has already verified the user exists via Supabase RLS
-// This endpoint completes the flow by issuing a JWT for API access
+// OAuth Login - verify the Supabase access token before issuing a backend JWT.
 export const oauthLogin = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { accessToken } = req.body;
 
-    if (!email) {
-      return res.status(400).json({ error: "Email is required" });
+    if (!accessToken) {
+      return res.status(400).json({ error: "Supabase access token is required" });
     }
 
-    // Get user to verify they exist and are active
-    const user = await User.getUserByEmail(email);
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey =
+      process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error("OAuth login requires SUPABASE_URL and SUPABASE_ANON_KEY");
+      return res.status(500).json({ error: "OAuth login is not configured" });
+    }
+
+    const supabaseResponse = await fetch(
+      `${supabaseUrl.replace(/\/$/, "")}/auth/v1/user`,
+      {
+        headers: {
+          apikey: supabaseAnonKey,
+          Authorization: `Bearer ${accessToken}`,
+        },
+      },
+    );
+
+    if (!supabaseResponse.ok) {
+      return res.status(401).json({ error: "Invalid or expired Google session" });
+    }
+
+    const supabaseUser = await supabaseResponse.json();
+    if (!supabaseUser.email) {
+      return res.status(401).json({ error: "Google account has no email address" });
+    }
+
+    // Verify the authenticated Supabase account is an active system user.
+    const user = await User.getUserByEmail(supabaseUser.email);
 
     if (!user) {
       return res.status(401).json({ error: "User not found in system" });

@@ -13,12 +13,26 @@ dotenv.config();
 const app = express();
 
 const PORT = process.env.PORT || 3000;
-const CLIENT_URL = process.env.VITE_CLIENT_URL || "http://localhost:5173";
+const CLIENT_URLS = (
+  process.env.CLIENT_URL ||
+  process.env.VITE_CLIENT_URL ||
+  "http://localhost:5173,https://linked-bpo-it-asset-inventory.vercel.app"
+)
+  .split(",")
+  .map((url) => url.trim())
+  .filter(Boolean);
 
 // Middleware
 app.use(
   cors({
-    origin: CLIENT_URL,
+    origin: (origin, callback) => {
+      if (!origin || CLIENT_URLS.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error("Origin is not allowed by CORS"));
+    },
     credentials: true,
   }),
 );

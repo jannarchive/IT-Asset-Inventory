@@ -4,6 +4,49 @@ import { supabase } from "../lib/SupabaseClient";
 import "../styles/Login.css";
 import backgroundImage from "../assets/login-page-background.png";
 
+const DEFAULT_SERVER_URL = "https://it-asset-inventory-server.onrender.com";
+const configuredServerUrl = import.meta.env.VITE_SERVER_URL?.trim();
+const SERVER_URL = (() => {
+  if (!configuredServerUrl) return DEFAULT_SERVER_URL;
+
+  try {
+    const configuredUrl = new URL(configuredServerUrl, window.location.origin);
+    if (configuredUrl.origin === window.location.origin) {
+      return DEFAULT_SERVER_URL;
+    }
+  } catch {
+    return DEFAULT_SERVER_URL;
+  }
+
+  return configuredServerUrl.replace(/\/+$/, "");
+})();
+
+async function postAuthRequest(path, body) {
+  const response = await fetch(`${SERVER_URL}/api/auth/${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const responseText = await response.text();
+  let data;
+
+  try {
+    data = responseText ? JSON.parse(responseText) : {};
+  } catch {
+    throw new Error(
+      `The API returned a non-JSON response (HTTP ${response.status}). Check that VITE_SERVER_URL points to the backend server.`,
+    );
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      data.error || data.message || `Request failed (HTTP ${response.status}).`,
+    );
+  }
+
+  return data;
+}
+
 function Login() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -24,20 +67,7 @@ function Login() {
         throw new Error("Please enter both email and password.");
       }
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SERVER_URL || "http://localhost:3000"}/api/auth/login`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Login failed. Please try again.");
-      }
+      const data = await postAuthRequest("login", { email, password });
 
       localStorage.setItem("authToken", data.token);
       localStorage.setItem("system_user", JSON.stringify(data.user));
@@ -79,58 +109,23 @@ function Login() {
 
   useEffect(() => {
     let active = true;
+    let loginStarted = false;
     let callbackTimeout;
 
     const completeOAuthLogin = async (session) => {
       setLoading(true);
 
       try {
-        const { data: systemUser, error: queryError } = await supabase
-          .from("system_users")
-          .select("system_users_id, email, full_name")
-          .eq("email", session.user.email)
-          .single();
-
-        if (queryError || !systemUser) {
-          await supabase.auth.signOut();
-          setError(
-            "Your Google account is not authorized to access this system. Contact the system administrator.",
-          );
-          setLoading(false);
-          return;
-        }
-
-        const backendResponse = await fetch(
-          `${import.meta.env.VITE_SERVER_URL || "https://it-asset-inventory-server.onrender.com"}/api/auth/oauth-login`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: systemUser.email }),
-          },
-        );
-
-        const backendData = await backendResponse.json();
-
-        if (!backendResponse.ok) {
-          throw new Error(
-            backendData.error ||
-              "Failed to complete OAuth login. Please try again.",
-          );
-        }
+        const backendData = await postAuthRequest("oauth-login", {
+          accessToken: session.access_token,
+        });
 
         localStorage.setItem("authToken", backendData.token);
-        localStorage.setItem(
-          "system_user",
-          JSON.stringify({
-            system_users_id: systemUser.system_users_id,
-            email: systemUser.email,
-            full_name: systemUser.full_name,
-          }),
-        );
+        localStorage.setItem("system_user", JSON.stringify(backendData.user));
         localStorage.setItem("adminName", backendData.user.full_name);
         localStorage.setItem("adminEmail", backendData.user.email);
 
-        navigate("/admin/dashboard");
+        navigate("/admin/dashboard", { replace: true });
       } catch (err) {
         console.error("Auth verification error:", err);
         setError(
@@ -143,13 +138,18 @@ function Login() {
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        if (event === "SIGNED_IN" && session) {
-          callbackTimeout = window.setTimeout(() => {
-            if (active) {
-              void completeOAuthLogin(session);
-            }
-          }, 0);
+        if (
+          !session ||
+          (event !== "INITIAL_SESSION" && event !== "SIGNED_IN") ||
+          loginStarted
+        ) {
+          return;
         }
+
+        loginStarted = true;
+        callbackTimeout = window.setTimeout(() => {
+          if (active) void completeOAuthLogin(session);
+        }, 0);
       },
     );
 
