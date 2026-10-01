@@ -56,7 +56,7 @@ const INITIAL_STANDARD_PERIPHERALS = () =>
     STANDARD_PERIPHERAL_ROLES.map((role) => [role, INITIAL_PERIPHERAL(role)])
   );
 
-const peripheralCard = ({ title, data, onChange }) => (
+const PeripheralCard = ({ title, data, onChange }) => (
   <div className="Peripheral-card">
     <div className="Peripheral-card-header">
       <h4 className="Peripheral-card-title">{title}</h4>
